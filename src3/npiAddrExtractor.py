@@ -27,29 +27,24 @@ title = "va1, va2, vc, vs, vp5, vp4, oa1, oa2, oc, os, op5, op4, on, oda1, oda2,
 title = title.split(', ');
 
 
-workfor = 5000000;
+workfor = 100;
 '''
 157926,160457， 251029
 '''
-beginline = 3227050;
+beginline = 30;
 #beginline = 1;
 
 
 endline = beginline + workfor;
 
 addressFile = '/Users/lancer/workspace/npi/npidata_20050523-20160313.csv'
-outputFile = '../npiAddr.csv';
+outputFile = '../DevOut.csv';
 addr1Index = (21, 22, 23, 24, 25, 26);
 addr2Index = (29, 30, 31, 32, 33, 34);
 
 indexs = addr1Index;
 
-countEmpty = 0;
-countForeign = 0;
-countLineShort = 0;
 
-totalError = 0;
-beginTime = time.time();
 
 def extractAddr(row, index):
     if len(row) >= max(index) :
@@ -84,19 +79,75 @@ def prepareCsvRow(uspsAddr, addr, distance, npiid, npitype, addrtype, verifiedTy
     r.append(verifiedType)
     return r
 
+class Reporter:
+    def __init__(self, spamreader):
+        self.reader = spamreader;
+        self.statCount = {}
+        self.countPoint = 0;
+        self.startTime = time.time();
+        print('000000', end=': ',)
+        pass
+    def report(self, stat):
+        if stat in self.statCount:
+            self.statCount[stat] += 1;
+        else : 
+            self.statCount[stat] = 1;
+        self.countPoint += 1;
+        print(stat[0],end='')
+        if self.countPoint > 50:
+            self.countPoint = 0
+            print()
+            sys.stdout.flush()
+            print('%06d' % spamreader.line_num, end=': ',)
+            
+    def showStat(self):
+        print();
+        for item in self.statCount :
+            print (item, ': ', self.statCount[item]);
+        print ('total cost =', str(time.time() - self.startTime))
+
+def verify(row, addr, addrtype):
+    if addr == None:
+        statReport.report('ERROR')
+        return None;
+    if addr.isEmpty():
+        statReport.report('BLANK')
+        return None
+    elif addr.isForeign():
+        statReport.report('Foreign')
+        r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'F')
+        return r;
+    else:
+        try:
+            uspsAddr, msg = verify_by_usps.reqUSPS(addr)
+        except socket.error :
+            time.sleep(5)
+            statReport.report('Timeout')
+            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'T')
+            return r
+        if uspsAddr == None:
+            statReport.report('NotFound')
+            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg)
+        else:
+            statReport.report('.')
+            r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V') #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
+        #continue;
+    return r
         
 if __name__ == '__main__':
-    
-    print (sys.getdefaultencoding())
-    
+        
     outf = open(outputFile, 'w', encoding='utf-8');
     writer = csv.writer(outf, delimiter=',', quotechar='"');
     #print ( title);
     writer.writerow(title);
     
     verifiedType = '';
+    
+
     with open(addressFile, 'r', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
+        statReport = Reporter(spamreader);
+
         uspsAddr = None
         msg = '';
         countPoint = 0;
@@ -104,12 +155,10 @@ if __name__ == '__main__':
         for row in spamreader:
             if spamreader.line_num <= beginline:
                 continue;
-            '''
-            print spamreader.line_num, row
-            print row[addr1Index[2] -1]
-            print type(row[addr2Index[2] -1])
-            #print unicode(row[addr1Index[2] -1], "utf-8")
-            '''
+            
+            if spamreader.line_num > endline :
+                break;
+            
             '''
             first address
             '''
@@ -120,115 +169,33 @@ if __name__ == '__main__':
             else :
                 addrtype = 'M'
             
-            if addr == None:
-                print("error **************")
-                print(row);
-                countLineShort += 1;
-                #continue;
-            #print spamreader.line_num, ': ', addr;
-            if addr.isEmpty():
-                print('E', end='')
-                #print row;
-                countEmpty += 1;
-                #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
-                #continue;
-            elif addr.isForeign() :
-                print('F', end='')
-                #print row;
-                countForeign += 1;
-                r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'F');
-            else :
-
-                try :
-                    (uspsAddr, msg) = verify_by_usps.reqUSPS(addr);
-                    #print (uspsAddr)
-                except socket.error as error :
-                    outf.flush();
-                    print(error)
-                    print('sleep 5 seconds')
-                    time.sleep(5)  
-                    break;
-                if uspsAddr == None :
-                    totalError += 1;
-                    print('')
-                    print(spamreader.line_num, ': ', addr);
-                    #print uspsAddr;
-                    print(msg)
-                    r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg)
-                else :
-                    print('.', end='')
-                    countPoint += 1;
-                    if countPoint > 50 :
-                        countPoint = 0;
-                        print();
-                        sys.stdout.flush() ;
-                    r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V')
+            r = verify(row, addr, addrtype)
 
             #print ','.join(r)
-            writer.writerow(r);
+            if r != None :
+                writer.writerow(r);
             ''' 
             second address
             '''
-            if addrtype != 'MP' :
+            if addrtype == 'MP' :
+                continue;
+            else :
                 addrtype = 'P'
-                addr = addr1;
-            else :
-                continue;
-            
-            if addr == None:
-                print("error **************")
-                print(row);
-                countLineShort += 1;
-                continue;
-            #print spamreader.line_num, ': ', addr;
-            if addr.isEmpty():
-                print('E', end='')
-                countEmpty += 1;
-                #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
-                continue;
-            elif addr.isForeign() :
-                print('F', end='')
-                countForeign += 1;
-                r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'F');
-            else :
-                try :
-                    (uspsAddr, msg) = verify_by_usps.reqUSPS(addr);
-                except socket.error as error :
-                    outf.flush();
-                    print(error)
-                    print('sleep 5 seconds')
-                    time.sleep(5)   
-                    break;
-                if uspsAddr == None :
-                    totalError += 1;
-                    print('')
-                    print(spamreader.line_num, ': ', addr);
-                    #print uspsAddr;
-                    print(msg)
-                    r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg)
-                else :
-                    print('.', end='')
-                    countPoint += 1;
-                    if countPoint > 50 :
-                        countPoint = 0;
-                        print();
-                        sys.stdout.flush() ;
-                    r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V')
+
+            r = verify(row, addr1, 'P')
 
             #print ','.join(r)
-            writer.writerow(r);
+            if r != None :
+                writer.writerow(r);
 
-            if spamreader.line_num > endline :
-                break;
-        print() 
-        print('cost: ', time.time() - beginTime);
-        print('totalError:', totalError)
-        print('countEmpty:', countEmpty)
-        print('countForeign:', countForeign)
-        print('countLineShort:', countLineShort)
+   
+
 
     outf.close();
+    
+    statReport.showStat();
 
     pass
+
 
 
