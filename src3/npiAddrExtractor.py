@@ -27,11 +27,11 @@ title = "va1, va2, vc, vs, vp5, vp4, oa1, oa2, oc, os, op5, op4, on, oda1, oda2,
 title = title.split(', ');
 
 
-workfor = 100;
+workfor = 1000;
 '''
 157926,160457， 251029
 '''
-beginline = 30;
+beginline = 50;
 #beginline = 1;
 
 
@@ -42,7 +42,8 @@ outputFile = '../DevOut.csv';
 addr1Index = (21, 22, 23, 24, 25, 26);
 addr2Index = (29, 30, 31, 32, 33, 34);
 
-indexs = addr1Index;
+NotFoundMsg = '../NotFoundMsg.txt'
+
 
 
 
@@ -82,29 +83,36 @@ def prepareCsvRow(uspsAddr, addr, distance, npiid, npitype, addrtype, verifiedTy
 class Reporter:
     def __init__(self, spamreader):
         self.reader = spamreader;
+        self.lineBegin = spamreader.line_num;
+        self.currentLineNum = spamreader.line_num;
         self.statCount = {}
-        self.countPoint = 0;
+        self.addrCount = 0;
         self.startTime = time.time();
+        self.dotCount = 0;
         print('000000', end=': ',)
         pass
     def report(self, stat):
+        self.currentLineNum = spamreader.line_num;
+        self.addrCount += 1;
         if stat in self.statCount:
             self.statCount[stat] += 1;
         else : 
             self.statCount[stat] = 1;
-        self.countPoint += 1;
+        self.dotCount += 1;
         print(stat[0],end='')
-        if self.countPoint > 50:
-            self.countPoint = 0
+        sys.stdout.flush()
+        if self.dotCount > 50:
+            self.dotCount = 0
             print()
-            sys.stdout.flush()
             print('%06d' % spamreader.line_num, end=': ',)
             
     def showStat(self):
         print();
         for item in self.statCount :
-            print (item, ': ', self.statCount[item]);
-        print ('total cost =', str(time.time() - self.startTime))
+            print ('total of', item, ': ', self.statCount[item]);
+        print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
+        print ('total lines =', str(self.currentLineNum - self.lineBegin))
+        print ('total addresses =', str(self.addrCount))
 
 def verify(row, addr, addrtype):
     if addr == None:
@@ -127,14 +135,19 @@ def verify(row, addr, addrtype):
             return r
         if uspsAddr == None:
             statReport.report('NotFound')
-            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg)
+            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg[0])
+            #print (msg[0] , msg[1])
+            nfm.write(msg[0] + " : " + msg[1] + '\n');
+            nfm.flush();
         else:
-            statReport.report('.')
+            statReport.report('.Verified')
             r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V') #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
         #continue;
     return r
         
 if __name__ == '__main__':
+    
+    nfm = open(NotFoundMsg, 'w', encoding='utf-8');
         
     outf = open(outputFile, 'w', encoding='utf-8');
     writer = csv.writer(outf, delimiter=',', quotechar='"');
@@ -147,7 +160,8 @@ if __name__ == '__main__':
     with open(addressFile, 'r', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
         statReport = Reporter(spamreader);
-
+        statReport.lineBegin = beginline;
+        
         uspsAddr = None
         msg = '';
         countPoint = 0;
@@ -155,7 +169,7 @@ if __name__ == '__main__':
         for row in spamreader:
             if spamreader.line_num <= beginline:
                 continue;
-            
+
             if spamreader.line_num > endline :
                 break;
             
@@ -188,10 +202,8 @@ if __name__ == '__main__':
             if r != None :
                 writer.writerow(r);
 
-   
-
-
     outf.close();
+    nfm.close();
     
     statReport.showStat();
 

@@ -168,6 +168,8 @@ class Address:
             return True
         
     def isForeign(self):
+        if self.nation == 'USA' :
+            return False
         if len(self.state) > 0 : 
             return False
         else :
@@ -191,17 +193,19 @@ def reqUSPS(addr):
     #r1 = conn.getresponse()
     #print (r1.status, r1.reason)
     if r1.status != 200:
-        return (None, ' '.join(['' + r1.status, r1.reason]))
+        return (None, (r1.status, r1.reason))
 
     result = r1.read()
     dom = parseString(result);
     #conn.close()
     #print (result)
-    #print (dom.toprettyxml())
     
-    if getText(dom, '<Error>') != None :
+    bb = dom.getElementsByTagName('Error')
+    if len(bb) > 0 :
+        #print( dom.toprettyxml());
         errCode = getText(dom, 'Number');
-        return (None, errCode);
+        errDesc = getText(dom, 'Description');
+        return (None, (errCode, errDesc));
     #print ('********')
     a1 = getText(dom, 'Address2');
     if a1 == None:
