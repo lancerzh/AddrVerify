@@ -27,11 +27,11 @@ title = "va1, va2, vc, vs, vp5, vp4, oa1, oa2, oc, os, op5, op4, on, oda1, oda2,
 title = title.split(', ');
 
 
-workfor = 1000;
+workfor = 10000;
 '''
 157926,160457， 251029
 '''
-beginline = 50;
+beginline = 750;
 #beginline = 1;
 
 
@@ -138,7 +138,11 @@ def verify(row, addr, addrtype):
             r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg[0])
             #print (msg[0] , msg[1])
             nfm.write(msg[0] + " : " + msg[1] + '\n');
+            if msg[0] != '-2147219401' :
+                nfm.write(addr.__str__()+"\n")
+                nfm.write(','.join(row)+'\n')
             nfm.flush();
+
         else:
             statReport.report('.Verified')
             r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V') #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');

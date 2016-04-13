@@ -174,6 +174,12 @@ class Address:
             return False
         else :
             return True;
+        
+    def isPOBox(self):
+        if self.addr1.find('BOX') >= 0 or self.addr2.find('BOX') >= 0 :
+            return True;
+        else :
+            return False;
 
 urlString = '/ShippingAPI.dll?API=Verify&XML=';
 
@@ -225,13 +231,13 @@ def reqUSPS(addr):
     
     z5 = getText(dom, 'Zip5');
     if z5 == None :
-        z5 = '00000';
+        z5 = '-----';
         
     z4 = getText(dom, 'Zip4');
-    if  z4 != None and z4 != '' and len(addr.zip4) == 4 and addr.zip4 !='0000':
+    if  z4 != None and z4 != '' and len(addr.zip4) == 4 :
         pass
     else :
-        z4 = '0000'
+        z4 = '----'
 
 
     #return (Address(a1, a2, c, s, z5 + z4), dom.toprettyxml(), distance);
