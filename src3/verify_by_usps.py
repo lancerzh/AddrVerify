@@ -138,10 +138,10 @@ class Address:
         
         
     def __str__(self) :
-        return '"' + '","'.join((self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4)) + '"';
+        return ','.join((self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4));
     
     def getSortStr(self):
-        return '"' + '","'.join((self.zip5, self.zip4, self.state, self.city, self.addr1, self.addr2)) + '"';
+        return ','.join((self.zip5, self.zip4, self.state, self.city, self.addr1, self.addr2)) ;
     
     def buildxml(self):
         xmlTemplete = '''
@@ -255,7 +255,7 @@ def calcDistance(a1, a2):
         
     z4d = fuzz.ratio(a1.zip4, a2.zip4);
 
-    return [ad, a2d, a1d, cd, sd, z4d, z5d];
+    return [ad, a2d, a1d, cd, sd, z5d, z4d];
 
 if __name__ == '__main__':
     pass
