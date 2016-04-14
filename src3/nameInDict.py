@@ -6,6 +6,7 @@ Created on Apr 7, 2016
 import csv;
 import makeSuffixDict;
 import placeNames;
+import USMailAddress
 
 addressFile = '../freqdict.csv'
 
@@ -26,11 +27,11 @@ if __name__ == '__main__':
                 wordNotAlpha += 1;
                 continue;
             
-            if word in makeSuffixDict.prefixes:
+            if word in USMailAddress.prefixes:
                 continue;
-            if word in makeSuffixDict.suffixes:
+            if word in USMailAddress.suffixes:
                 continue;
-            if word in makeSuffixDict.qualifiers:
+            if word in USMailAddress.qualifiers:
                 continue;
             
             if word in placeNames.linuxdict :

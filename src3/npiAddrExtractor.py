@@ -6,6 +6,7 @@ Created on Mar 28, 2016
 @author: lancer
 '''
 import verify_by_usps;
+import USMailAddress;
 import csv, codecs, io;
 import time;
 import socket
@@ -123,7 +124,7 @@ def verify(row, addr, addrtype):
         return None
     elif addr.isForeign():
         statReport.report('Foreign')
-        r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'F')
+        r = prepareCsvRow(None, addr, USMailAddress.calcDistance(None, addr), row[0], row[1], addrtype, 'F')
         return r;
     else:
         try:
@@ -131,11 +132,11 @@ def verify(row, addr, addrtype):
         except socket.error :
             time.sleep(5)
             statReport.report('Timeout')
-            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'T')
+            r = prepareCsvRow(None, addr, USMailAddress.calcDistance(None, addr), row[0], row[1], addrtype, 'T')
             return r
         if uspsAddr == None:
             statReport.report('NotFound')
-            r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg[0])
+            r = prepareCsvRow(None, addr, USMailAddress.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg[0])
             #print (msg[0] , msg[1])
             nfm.write(msg[0] + " : " + msg[1] + '\n');
             if msg[0] != '-2147219401' :
@@ -145,7 +146,7 @@ def verify(row, addr, addrtype):
 
         else:
             statReport.report('.Verified')
-            r = prepareCsvRow(uspsAddr, addr, verify_by_usps.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V') #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
+            r = prepareCsvRow(uspsAddr, addr, USMailAddress.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, 'V') #r = prepareCsvRow(None, addr, verify_by_usps.calcDistance(None, addr), row[0], row[1], addrtype, 'E');
         #continue;
     return r
         

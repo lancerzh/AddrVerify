@@ -4,6 +4,7 @@ Created on Mar 28, 2016
 @author: lancer
 '''
 import verify_by_usps;
+import USMailAddress
 import csv;
 import time;
 
@@ -34,7 +35,7 @@ if __name__ == '__main__':
             if spamreader.line_num <= beginline:
                 continue;
             #print row[indexOfZip - 1], row[indexOfState -1], row[indexOfCity - 1], row[indexOfAddr2 - 1], row[indexOfAddr1 - 1]
-            addr = verify_by_usps.Address(row[indexs[0] - 1], row[indexs[1]  - 1], row[indexs[2]  - 1], row[indexs[3]  -1], row[indexs[4]  - 1]);
+            addr = USMailAddress.Address(row[indexs[0] - 1], row[indexs[1]  - 1], row[indexs[2]  - 1], row[indexs[3]  -1], row[indexs[4]  - 1]);
             #print spamreader.line_num, ': ', addr;
             if addr.isEmpty():
                 print('')
