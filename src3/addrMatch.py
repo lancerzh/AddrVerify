@@ -3,6 +3,7 @@ Created on Apr 12, 2016
 
 @author: lancer
 '''
+from USMailAddress import Address, AddressLexical, calcDistance
 import verify_by_usps
 import socket
 import time
@@ -45,8 +46,8 @@ class Reporter:
         print ('total addresses =', str(self.addrCount))
         
 def rewriteAddr1Addr2(addr):
-    newAddr = verify_by_usps.Address(addr.addr1, addr.addr2, addr.city, addr.state, addr.zip5);
-    lex = verify_by_usps.AddressLexical(addr.addr1, addr.addr2);
+    newAddr = Address(addr.addr1, addr.addr2, addr.city, addr.state, addr.zip5);
+    lex = AddressLexical(addr.addr1, addr.addr2);
     lex.replaceAbbr();
     newAddr.addr1 = lex.addr1;
     newAddr.addr2 = lex.addr2;
@@ -70,28 +71,28 @@ def splitAlphaNumStr(sentence):
     return ' '.join(words).strip();
 
 def splitAlphaNum(addr):
-    return verify_by_usps.Address(splitAlphaNumStr(addr.addr1), splitAlphaNumStr(addr.addr2), addr.city, addr.state, addr.zip5);
+    return Address(splitAlphaNumStr(addr.addr1), splitAlphaNumStr(addr.addr2), addr.city, addr.state, addr.zip5);
 
 def useA1only(addr):
-    return verify_by_usps.Address(addr.addr1, '', addr.city, addr.state, addr.zip5);
+    return Address(addr.addr1, '', addr.city, addr.state, addr.zip5);
 
 def swapA1A2(addr):
-    return verify_by_usps.Address(addr.addr2, addr.addr1, addr.city, addr.state, addr.zip5);
+    return Address(addr.addr2, addr.addr1, addr.city, addr.state, addr.zip5);
 
 def useA2withoutA1(addr):
-    return verify_by_usps.Address(addr.addr2, '', addr.city, addr.state, addr.zip5);
+    return Address(addr.addr2, '', addr.city, addr.state, addr.zip5);
 
 def useA1plugA2(addr):
-    return verify_by_usps.Address(addr.addr1 + ' ' + addr.addr2, '', addr.city, addr.state, addr.zip5);
+    return Address(addr.addr1 + ' ' + addr.addr2, '', addr.city, addr.state, addr.zip5);
 
 def useCSZ(addr):
-    return verify_by_usps.Address('', '', addr.city, addr.state, addr.zip5);
+    return Address('', '', addr.city, addr.state, addr.zip5);
 
 def replaceunctuation(addr):
     tranmap = str.maketrans('-#.&', '    ')
     a1 = addr.addr1.translate(tranmap)
     a2 = addr.addr2.translate(tranmap)
-    return verify_by_usps.Address(a1, a2, addr.city, addr.state, addr.zip5 + addr.zip4);
+    return Address(a1, a2, addr.city, addr.state, addr.zip5 + addr.zip4);
 
 def wrongAbbr(addr):
     a1w = addr.addr1.split();
@@ -112,7 +113,7 @@ def wrongAbbr(addr):
     for ow in replaceWords :
         nw = replaceWords[ow]
         newstr = newstr.replace(ow, nw);
-    newAddr = verify_by_usps.Address(newstr, addr.addr2, addr.city, addr.state, addr.zip5 + addr.zip4);
+    newAddr = Address(newstr, addr.addr2, addr.city, addr.state, addr.zip5 + addr.zip4);
     return newAddr;
 
 rewriteMothed = [rewriteAddr1Addr2, 
@@ -164,7 +165,7 @@ if __name__ == '__main__':
             statReport.report(msg)
             print (la)
             print (a2);
-            print(verify_by_usps.calcDistance(oa, a2))
+            print(calcDistance(oa, a2))
         else:
             print (la);
             statReport.report(':'.join(msg))

@@ -4,23 +4,37 @@ Created on Apr 9, 2016
 @author: lancer
 '''
 import unittest
-import npidb as db
+import npidb 
+from USMailAddress import Address
 
 class Test(unittest.TestCase):
     def testConn(self):
-        conn = db.getConnection()
+        conn = npidb.getConnection()
         self.assertIsNotNone(conn)
-        print (conn)
         pass
-    
-'''
+    def testSearchAddr(self):
+        conn = npidb.getConnection();
+        
+        anAddr = Address('2615 NE LOOP 286', '', 'PARIS', 'TX', '75460')
+        r = npidb.searchAddr(conn, anAddr);
+        self.assertTrue(len(r) > 0);
+        ra = r[0]
+        
+        anAddr = Address("600 CHATHAM MEDICAL PARK","","ELKIN","NC","28621");
+        r = npidb.searchAddr(conn, anAddr);
+        self.assertTrue(len(r) == 0);
+        print(ra)
+
     def testnpidb(self):
-        r = npidb.fetchBlank('', 100);
+        r = npidb.fetchBlank(npidb.getConnection(), '', 100);
+        self.assertTrue(len(r) > 0);
         self.assertEqual(100, len(r));
+        '''
         for row in r:
             va, od = npidb.createAddrFromRow(row)
             print (od)
             '''
+            
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

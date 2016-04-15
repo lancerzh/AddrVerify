@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 Created on Apr 6, 2016
 
@@ -13,8 +15,11 @@ import operator;
 import string
 import re
 
-addressFile = '/Users/lancer/workspace/npi/npidata_20050523-20150308.csv'
-indexs = (21, 29, 23, 24, 25);
+
+addressFile = '/Users/lancer/workspace/npi/npidata_20050523-20160313.csv'
+#indexs = (21, 29, 23, 24, 25);
+indexs = (29, 30, 31, 32, 33, 34);
+
 #addressFile = '../billingverified.csv'
 #indexs = (4,5,3,2,0);
 
@@ -96,7 +101,7 @@ if __name__ == '__main__':
     endline = beginline + workfor;
 
     beginTime = time.time();
-    with open(addressFile, 'rb') as csvfile:
+    with open(addressFile, 'r', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
         for row in spamreader:
             if spamreader.line_num <= beginline:
@@ -121,7 +126,7 @@ if __name__ == '__main__':
             
         print('************************')
         
-    fdt = open('../freqdict.csv', 'wb');
+    fdt = open('../freqdict.csv', 'w');
     sorted_x = sorted(list(wordUsage.items()), key=lambda x:x[1])
     sorted_x.reverse();
     print('total countOfWords = ', len(sorted_x));
@@ -139,7 +144,7 @@ if __name__ == '__main__':
         print a1[0],
         print len(a1[0]);
     '''
-    fdt = open('../freqdictByLength.csv', 'wb');
+    fdt = open('../freqdictByLength.csv', 'w');
     sorted_x = sorted(list(wordUsage.items()), key=lambda x:(len(x[0]), x[0]), reverse=True)
     sorted_x.reverse();
     a = sorted_x[0];
@@ -148,7 +153,7 @@ if __name__ == '__main__':
         fdt.write('"' + a[0] + '",' + str(a[1]) + '\n');
     fdt.close();
     
-    fdt = open('../freqComplexWords.csv', 'wb');
+    fdt = open('../freqComplexWords.csv', 'w',  encoding='utf-8');
     print('************************')
     sorted_x = sorted(list(countComplexWords.items()), key=lambda x:x[1])
     sorted_x.reverse();
@@ -156,10 +161,10 @@ if __name__ == '__main__':
     a = sorted_x[0];
     print(a[0], a[1])
     for a in sorted_x :
-        '''
+        
         if a[1] > 1 :
-            print a[0], a[1];
-            '''
+            print (a[0], a[1]);
+            
         fdt.write('"' + a[0] + '",' + str(a[1]) + '\n');
     fdt.close();
     pass

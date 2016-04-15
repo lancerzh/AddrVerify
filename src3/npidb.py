@@ -46,14 +46,35 @@ def createAddrFromRow(dbrow):
     oaddr = verify_by_usps.Address(dbrow[6], dbrow[7], dbrow[8], dbrow[9], dbrow[10] + dbrow[11], dbrow[12]);
     return vaddr, oaddr
 
+def searchAddr(conn, addr):
+    result = []
+    try:
+        with conn.cursor() as cursor:
+            # Read a single record
+            sql = """SELECT *
+            FROM `npiaddress` 
+            WHERE verified = 'V'
+            and `vp5` = %s
+            and `vs` = %s
+            and `vc` = %s
+            and `va1` = %s 
+            and `va2` = %s
+            limit 0, 10
+            """
+            
+            cursor.execute(sql, (addr.zip5, addr.state, addr.city, addr.addr1, addr.addr2));
+            result = cursor.fetchall()
 
-def fetchBlank(npiid, howmany):
+    except :
+        conn.close()
+        conn = None
+    return result;
 
-    # Connect to the database
-    connection = getConnection();
+def fetchBlank(conn, npiid, howmany):
+
     
     try:
-        with connection.cursor() as cursor:
+        with conn.cursor() as cursor:
             # Read a single record
             sql = """SELECT *
             FROM `npiaddress` 
@@ -71,8 +92,8 @@ def fetchBlank(npiid, howmany):
 
             
     finally:
-        connection.close()
-        connection = None
+        conn.close()
+        conn = None
         
     return result;
 

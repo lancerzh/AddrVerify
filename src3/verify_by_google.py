@@ -66,7 +66,7 @@ def buildGoogleReq(addr):
         addrElements.append(addr.zip5) '''
     #print (addrElements)
     ue = urlreqHead + ','.join(addrElements) + urlreqTail
-    print(ue)
+    #print(ue)
     #ueq = urllib.parse.quote(urlreqHead + ','.join(addrElements) + urlreqTail)
     #print(ueq)
     url = serverHead + ue
