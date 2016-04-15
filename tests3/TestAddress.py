@@ -4,7 +4,7 @@ Created on Apr 8, 2016
 @author: lancer
 '''
 import unittest
-from verify_by_usps import Address 
+from USMailAddress import Address , Distance
 
 
 class Test(unittest.TestCase):
@@ -31,6 +31,17 @@ class Test(unittest.TestCase):
         self.assertNotEqual(None, Address('a', 'b', 'c', 's', 'z', 'n'))
         pass
 
+    def testDistance(self):
+        a1 = Address('a', 'b', 'c', 's', 'z', 'n')
+        a2 = Address('a', 'b', 'c', 's', 'z', 'n')
+        dist = Distance(a1, a2)
+        self.assertTrue(dist.isMatched())
+        
+        a1 = Address('7500 SMOKE RANCH RD STE 200','','LASVEGAS','NV','891280000')
+        a2 = Address('500 SMOKE RANCH RD','STE 200','LAS VEGAS','NV','89128,0373')
+        dist = Distance(a1, a2)
+        print (dist.detail())
+        self.assertTrue(dist.isMatched())
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

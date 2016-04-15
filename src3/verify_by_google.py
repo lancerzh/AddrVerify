@@ -97,21 +97,26 @@ def reqGoogle(addr):
     for r in resp['results'] :
         #print ( r['formatted_address'])
         words =  r['formatted_address'].upper().split(',');
+        #print (words)
         if len(words) < 4 : 
             print()
             print (addr)
+            print (words)
             print ('This is not detail address, ignored.');
             continue;
-        sp5 = words[2].strip().split(' ');
+        nation = words[-1].strip()
+        sp5 = words[-2].strip().split();
         if len(sp5) >= 1 :
-            s = sp5[0]
+            s = sp5[0].strip()
         else :
             s = '--'
         if len(sp5) >= 2 :
-            p5 = sp5[1]
+            p5 = sp5[1].strip()
         else :
             p5 = '00000'
-        newAddr = Address(words[0], '', words[1], s, p5, words[3])
+        city = words[-3].strip()
+        addr = words[-4].strip()
+        newAddr = Address(addr, '', city, s, p5, nation)
         allReturnAddr.append(newAddr);
 
     if len(allReturnAddr) > 0:

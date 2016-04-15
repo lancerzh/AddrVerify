@@ -16,6 +16,15 @@ addresses = ['207 SOUTH PRINCESS STREET,,SHEPHERDSTOWN,WV,25443,0000',
 ]
 
 class Test(unittest.TestCase):
+    
+    def testReturnFirmName(self):
+        print('testReturnFirmName')
+        addr = Address('DEPT 52519 PO BOX 950123','','LOUISVILLE','KY','402950000');
+        print (addr);
+        aa, msg, alt = verify_by_google.reqGoogle(addr);
+        for ga in alt:
+            print (ga);
+            print(calcDistance(addr, ga))
 
     def testName(self):
         for a in addresses :

@@ -694,6 +694,40 @@ class AddressLexical:
             a += ' ' + p
         self.addr2 = a.strip();
         
+class Distance:
+
+    def __init__(self, a1, a2):
+        if a1 == None or a2 == None :
+            return [0, 0, 0, 0, 0, 0, 0]
+        self.a1d = fuzz.ratio(a1.addr1, a2.addr1);
+        self.a2d = fuzz.ratio(a1.addr2, a2.addr2);
+        self.ad = fuzz.token_set_ratio(a1.addr1 + ' ' + a1.addr2, a2.addr1 + ' ' + a2.addr2);
+        self.cd = fuzz.ratio(a1.city, a2.city)
+        self.sd = fuzz.ratio(a1.state, a2.state)
+        if a1.zip5 == '0000' or a2.zip5 == '0000' :
+            self.z5d = 90;
+        else :
+            self.z5d = fuzz.ratio(a1.zip5, a2.zip5);
+        if a1.zip4 == '0000' or a2.zip4 == '0000' :
+            self.z4d = 90;
+        else :
+            self.z4d = fuzz.ratio(a1.zip4, a2.zip4);
+    def detail(self):
+        return [self.ad, self.a2d, self.a1d, self.cd, self.sd, self.z5d, self.z4d];
+    
+    def isMatched(self):
+        if self.sd < 100 :
+            return False;
+        # LOCKBOX 951326 vs PO BOX 951326 = 74, so set ad = 70; it means 1/5, 2/7, 3/10
+        if self.z5d == 100 and self.cd == 100 and self.ad >= 75 :
+            return True
+        elif self.z5d >= 80 and self.cd == 100 and self.ad > 90 :
+            return True;
+        elif self.z5d == 100 and self.cd >= 90 and self.ad >= 90 :
+            return True;
+        else :
+            return False
+        
 def calcDistance(a1, a2):
     if a1 == None or a2 == None :
         return [0, 0, 0, 0, 0, 0, 0]
@@ -704,7 +738,7 @@ def calcDistance(a1, a2):
 
     ad = fuzz.token_set_ratio(a1.addr1 + ' ' + a1.addr2, a2.addr1 + ' ' + a2.addr2);
 
-    cd = fuzz.ratio(a1.city, a2.city)
+    cd = fuzz.ratio(a1.city.replace(' '), a2.city.replace(' '))
     
     sd = fuzz.ratio(a1.state, a2.state)
 

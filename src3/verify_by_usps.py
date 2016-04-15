@@ -92,7 +92,7 @@ def reqUSPS(addr):
 
 
     #return (Address(a1, a2, c, s, z5 + z4), dom.toprettyxml(), distance);
-    return (Address(a1, a2, c, s, z5 + z4), '');
+    return (Address(a1.upper(), a2.upper(), c.upper(), s.upper(), z5.upper() + z4.upper()), '');
 
 
 
