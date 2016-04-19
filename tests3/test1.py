@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
     def testList(self):
         indexs = (21, 22, 23, 24, 25);
         self.assertEqual(21, indexs[0]);
-        self.assertEqual(3, len('"\"'))
+        self.assertEqual(2, len('"\"'))
         
     def testXmlRead(self):
         xmlTemplete = '''<?xml version="1.0" ?>

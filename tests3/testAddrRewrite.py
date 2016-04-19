@@ -28,14 +28,83 @@ addresses = ["1108 City Park Ave,,Columbus, OH, 43206",
 addresses = ['2727 W. MARTIN LUTHER KING BLVD.,SUITE 310,TAMPA,FL,33607',
              '2727 W MARTIN LUTHER KING BLVD,,TAMPA,FL,33607',
              "2727 West Drive Martin Luther King Jr Boulevard, Suite 310, Tampa, FL, 33607"]
+
+rwaddresses = [
+             ['1800 HARRISON ST FL 7', '', 'OAKLAND', 'CA', '94612'],
+             ['1800 HARRISON ST', 'FL 7', 'OAKLAND', 'CA', '94612'],
+             ['3495 PIEDMONT RD NE BLDG 9', '', 'ATLANTA', 'GA', '30305', '486'],
+             ['3495 PIEDMONT RD NE', 'BLDG 9', 'ATLANTA', 'GA', '30305', '486'],
+             ['933 BRADBURY DR SE STE 2222', '', 'ALBUQUERQUE', 'NM', '87106', '413'],
+             ['933 BRADBURY DR SE', 'STE 2222', 'ALBUQUERQUE', 'NM', '87106', '413']
+]
+
 def displaymatch(match):
     if match is None:
         return None
     return '<Match: %r, groups=%r>' % (match.group(), match.groups())
 
 class Test(unittest.TestCase):
+    
+    def testAddrWithFirmName(self):
+        print('testAddrWithFirmName');
+        #1818 ALBION ST,METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY,NASHVILLE,TN,37208
+        a = verify_by_usps.Address('1818 ALBION ST', 'METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1818 ALBION ST', 'METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', 'NASHVILLE', 'TN', '37208'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        
+        a = verify_by_usps.Address('METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', '1818 ALBION ST', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1818 ALBION ST', 'METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', 'NASHVILLE', 'TN', '37208'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        
+        a = verify_by_usps.Address('1818 ALBION ST', '', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1818 ALBION ST', '', 'NASHVILLE', 'TN', '37208'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+    
+        a = verify_by_usps.Address('', '1818 ALBION ST', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1818 ALBION ST', '', 'NASHVILLE', 'TN', '37208'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+    
+        a = verify_by_usps.Address('METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', '', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertIsNone(v)
+    
+        a = verify_by_usps.Address('', 'METROPOLITAN NASHVILLE GENERAL HOSPITAL EMERGENCY', 'NASHVILLE', 'TN', '37208')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertIsNone(v)
+        
+    def testRewriteAddrInfluenceUSPS(self):
+        print('testRewriteAddrInfluenceUSPS');
+        a = verify_by_usps.Address('1800 HARRISON ST FL 7', '', 'OAKLAND', 'CA', '94612')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1800 HARRISON ST FL 7', '', 'OAKLAND', 'CA', '94612'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        a = verify_by_usps.Address('1800 HARRISON ST', 'FL 7', 'OAKLAND', 'CA', '94612')
+        v, msg= verify_by_usps.reqUSPS(a);
+        self.assertEqual(['1800 HARRISON ST FL 7', '', 'OAKLAND', 'CA', '94612'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        
+        a = verify_by_usps.Address('3495 PIEDMONT RD NE BLDG 9', '', 'ATLANTA', 'GA', '30305')
+        v, msg= verify_by_usps.reqUSPS(a);
+        print(msg)
+        self.assertEqual(['3495 PIEDMONT RD NE', 'BLDG 9', 'ATLANTA', 'GA', '30305'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        a = verify_by_usps.Address('3495 PIEDMONT RD NE', 'BLDG 9', 'ATLANTA', 'GA', '30305')
+        v, msg= verify_by_usps.reqUSPS(a);
+        print(msg)
+        self.assertEqual(['3495 PIEDMONT RD NE', 'BLDG 9', 'ATLANTA', 'GA', '30305'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        
+        a = verify_by_usps.Address('933 BRADBURY DR SE STE 2222', '', 'ALBUQUERQUE', 'NM', '87106')
+        v, msg= verify_by_usps.reqUSPS(a);
+        print(msg)
+        self.assertEqual(['933 BRADBURY DR SE', 'STE 2222', 'ALBUQUERQUE', 'NM', '87106'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        a = verify_by_usps.Address('933 BRADBURY DR SE', 'STE 2222', 'ALBUQUERQUE', 'NM', '87106')
+        v, msg= verify_by_usps.reqUSPS(a);
+        print(msg)
+        self.assertEqual(['933 BRADBURY DR SE', 'STE 2222', 'ALBUQUERQUE', 'NM', '87106'], [v.addr1, v.addr2, v.city, v.state, v.zip5])
+        a = verify_by_usps.Address('STE 2222, 933 BRADBURY DR SE', '', 'ALBUQUERQUE', 'NM', '87106')
+        v, msg= verify_by_usps.reqUSPS(a);
+        print(msg)
+        self.assertIsNone(v)
 
     def testAddress(self):
+        print('testAddress');
         for a in addresses:
             al = a.split(',')
             addr = verify_by_usps.Address(al[0],al[1],al[2],al[3],al[4])
@@ -47,6 +116,7 @@ class Test(unittest.TestCase):
             #self.assertIsNotNone(va)
             
     def testSplitAlphaNum(self):
+        print('testSplitAlphaNum');
         self.assertEqual('1ST', addrMatch.splitAlphaNumStr("1ST"))
         m = re.compile(r"^([A-Z]*)([0-9]+)([A-Z]*)$")
 

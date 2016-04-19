@@ -3,7 +3,7 @@ Created on Apr 12, 2016
 
 @author: lancer
 '''
-from USMailAddress import Address, AddressLexical, calcDistance
+from USMailAddress import Address, AddressLexical,Distance
 import verify_by_usps
 import socket
 import time
@@ -165,7 +165,7 @@ if __name__ == '__main__':
             statReport.report(msg)
             print (la)
             print (a2);
-            print(calcDistance(oa, a2))
+            print(Distance(oa, a2))
         else:
             print (la);
             statReport.report(':'.join(msg))

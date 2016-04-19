@@ -550,13 +550,14 @@ qualifiers['SW']= ('Southwest','SW','GEOGRAPHIC DIRECTIONAL')
 
 
 class Address:
-    def __init__(self, a1, a2, c, s, z, n='US'):
-        self.addr1 = a1.strip();
-        self.addr2 = a2.strip();
-        self.city = c.strip();
-        self.state = s.strip();
-        self.nation = n.strip();
-        z = z.strip();
+    def __init__(self, a1, a2, c, s, z, n='US', firmName=''):
+        self.firmName = firmName.upper();
+        self.addr1 = a1.strip().upper();
+        self.addr2 = a2.strip().upper();
+        self.city = c.strip().upper();
+        self.state = s.strip().upper();
+        self.nation = n.strip().upper();
+        z = z.strip().upper();
         if len(z) >=5 :
             self.zip5 = z[0:5];
             self.zip4 = z[5:];
@@ -582,7 +583,7 @@ class Address:
             return False
         
     def __str__(self) :
-        return ','.join((self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4));
+        return ','.join((self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4, self.firmName));
     
     def getSortStr(self):
         return ','.join((self.zip5, self.zip4, self.state, self.city, self.addr1, self.addr2)) ;
@@ -602,7 +603,8 @@ class Address:
             return True;
         
     def isPOBox(self):
-        if self.addr1.find('BOX') >= 0 or self.addr2.find('BOX') >= 0 :
+        addr = self.addr1 + " " + self.addr2;
+        if addr.find('BOX') >= 0 and addr.find('PO') >= 0:
             return True;
         else :
             return False;
@@ -701,7 +703,16 @@ class Distance:
             return [0, 0, 0, 0, 0, 0, 0]
         self.a1d = fuzz.ratio(a1.addr1, a2.addr1);
         self.a2d = fuzz.ratio(a1.addr2, a2.addr2);
-        self.ad = fuzz.token_set_ratio(a1.addr1 + ' ' + a1.addr2, a2.addr1 + ' ' + a2.addr2);
+        #self.ad = fuzz.token_set_ratio(a1.addr1 + ' ' + a1.addr2, a2.addr1 + ' ' + a2.addr2);
+        a1line = a1.addr1 + ' ' + a1.addr2;
+        a2line = a2.addr1 + ' ' + a2.addr2
+        if (a1.isPOBox() and a2.isPOBox()):
+            a1line = stripPOBox(a1line)
+            a2line = stripPOBox(a2line)
+            self.ad = fuzz.ratio(a1line, a2line);
+        else :
+            self.ad = fuzz.token_set_ratio(a1line, a2line);
+            
         self.cd = fuzz.ratio(a1.city, a2.city)
         self.sd = fuzz.ratio(a1.state, a2.state)
         if a1.zip5 == '0000' or a2.zip5 == '0000' :
@@ -728,6 +739,11 @@ class Distance:
         else :
             return False
         
+def stripPOBox(line):
+    a1line = line.replace('BOX', '').replace('PO', '')
+    a1line = ' '.join(a1line.split())
+    return a1line;
+'''
 def calcDistance(a1, a2):
     if a1 == None or a2 == None :
         return [0, 0, 0, 0, 0, 0, 0]
@@ -735,10 +751,19 @@ def calcDistance(a1, a2):
     a1d = fuzz.ratio(a1.addr1, a2.addr1);
     
     a2d = fuzz.ratio(a1.addr2, a2.addr2);
+    
+    a1line = a1.addr1 + ' ' + a1.addr2;
+    a2line = a2.addr1 + ' ' + a2.addr2
+    if (a1.isPOBox() and a2.isPOBox()):
+        a1line = stripPOBox(a1line)
+        a2line = stripPOBox(a2line)
+        ad = fuzz.ratio(a1line, a2line);
+        print('POX', ad)
+    else :
+        ad = fuzz.token_set_ratio(a1line, a2line);
+        print('NO POX', ad)
 
-    ad = fuzz.token_set_ratio(a1.addr1 + ' ' + a1.addr2, a2.addr1 + ' ' + a2.addr2);
-
-    cd = fuzz.ratio(a1.city.replace(' '), a2.city.replace(' '))
+    cd = fuzz.ratio(a1.city.replace(' ', ''), a2.city.replace(' ', ''))
     
     sd = fuzz.ratio(a1.state, a2.state)
 
@@ -747,3 +772,4 @@ def calcDistance(a1, a2):
     z4d = fuzz.ratio(a1.zip4, a2.zip4);
 
     return [ad, a2d, a1d, cd, sd, z5d, z4d];
+'''

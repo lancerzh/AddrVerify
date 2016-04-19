@@ -6,7 +6,7 @@ Created on Apr 13, 2016
 import unittest
 import string
 import verify_by_google
-from USMailAddress import Address, calcDistance
+from USMailAddress import Address, Distance
 
 addresses = ['207 SOUTH PRINCESS STREET,,SHEPHERDSTOWN,WV,25443,0000',
 'USAF ACADEMY,,COLORADO SPRINGS,CO,80920,0000',
@@ -17,6 +17,15 @@ addresses = ['207 SOUTH PRINCESS STREET,,SHEPHERDSTOWN,WV,25443,0000',
 
 class Test(unittest.TestCase):
     
+    def testFirmNameAndCity(self):
+        print('testFirmNameAndCity');
+        addr = Address('DIAGNOSTIC IMAGING SO NV','','LAS VEGAS','NV','89121');
+        print (addr);
+        aa, msg, alt = verify_by_google.reqGoogle(addr);
+        for ga in alt:
+            print (ga);
+            print(Distance(addr, ga))
+        
     def testReturnFirmName(self):
         print('testReturnFirmName')
         addr = Address('DEPT 52519 PO BOX 950123','','LOUISVILLE','KY','402950000');
@@ -24,7 +33,7 @@ class Test(unittest.TestCase):
         aa, msg, alt = verify_by_google.reqGoogle(addr);
         for ga in alt:
             print (ga);
-            print(calcDistance(addr, ga))
+            print(Distance(addr, ga))
 
     def testName(self):
         for a in addresses :
@@ -35,7 +44,7 @@ class Test(unittest.TestCase):
             aa, msg, alt = verify_by_google.reqGoogle(addr);
             for ga in alt:
                 print (ga);
-                print(calcDistance(addr, ga))
+                print(Distance(addr, ga))
         pass
 
     def testTrans(self):

@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 Created on Mar 28, 2016
 
@@ -9,15 +11,18 @@ import npidb;
 import USMailAddress
 import csv;
 import time,sys;
+import io;
 
-workfor = 1500;
-beginline = 500;
+workfor = 100;
+beginline = 4500;
 endline = beginline + workfor;
 
 # addr1, addr2, city, states, postalCode
 #addressFile = '../billingaddress.csv';
 #indexs = (5,6,9, 11, 8); # for billingaddress
 addressFile = '../facilityaddress.csv'
+#addressFile = '../xad'
+
 indexs = (6,7,9,10,11); # for facilityaddress
 
 verifiedFile = '../verified.csv';
@@ -30,7 +35,8 @@ totalError = 0;
 beginTime = time.time();
 
 class Reporter:
-    def __init__(self, spamreader):
+    def __init__(self, spamreader, outputFlags = []):
+        self.outputFlags = outputFlags;
         self.reader = spamreader;
         self.lineBegin = spamreader.line_num;
         self.currentLineNum = spamreader.line_num;
@@ -48,7 +54,9 @@ class Reporter:
         else : 
             self.statCount[stat] = 1;
         self.dotCount += 1;
-        print(stat)
+        for s in self.outputFlags:
+            if stat.startswith(s):
+                print(stat)
         sys.stdout.flush()
 
             
@@ -64,6 +72,7 @@ def checkDistance(msg, origAddr, rewriteAddr):
     dtsr = USMailAddress.Distance(origAddr, rewriteAddr);
     if dtsr.isMatched() == False :
         statReport.report('distance not match');
+        print ('OF :', origAddr)
         print (msg, rewriteAddr)
         print (dtsr.detail())
         
@@ -81,9 +90,9 @@ if __name__ == '__main__':
     #nvf.write('' + '\n');
     conn = npidb.getConnection();
     lineCount = 0;
-    with open(addressFile, 'r') as csvfile:
+    with io.open(addressFile, 'r', encoding='utf-8') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar='"')
-        statReport = Reporter(spamreader);
+        statReport = Reporter(spamreader, ['3.1', '3.4']);
         statReport.lineBegin = beginline;
         
         for row in spamreader:
@@ -93,55 +102,60 @@ if __name__ == '__main__':
             if spamreader.line_num > endline :
                 break;
             print (spamreader.line_num, beginline, endline)
+            #print (row);
             #print row[indexOfZip - 1], row[indexOfState -1], row[indexOfCity - 1], row[indexOfAddr2 - 1], row[indexOfAddr1 - 1]
             addr = readAddrFrom(row)
-            print('OF :', addr)
+            #print('OF :', addr)
             #print spamreader.line_num, ': ', addr;
             if addr.isEmpty():
-                statReport.report('BLANK')
+                statReport.report('0. BLANK')
                 continue;
             elif addr.isForeign():
-                statReport.report('Foreign')
+                statReport.report('0. Foreign')
                 continue;
             
             ro = npidb.searchAddrInOrig(conn, addr);
             if len(ro) > 0  :
-                statReport.report('Directly:Tested Address Found In Orig Addr')
+                statReport.report('1.1 Directly:Tested Address Found In Orig Addr')
                 continue;
             r = npidb.searchAddrInVerified(conn, addr);
             if len(r) > 0 :
-                statReport.report('Directly:Tested Address Found In Verified Addr')
+                statReport.report('1.2 Directly:Tested Address Found In Verified Addr')
                 continue;
             (uspsAddr, msg ) = verify_by_usps.reqUSPS(addr);
+            statReport.report('2.0 usps:request the address to US Postal Office')
             if uspsAddr != None :
                 r = npidb.searchAddrInVerified(conn, uspsAddr);
                 if len(r) > 0 :
-                    statReport.report('usps:address Found In Verified DB')
+                    statReport.report('2.1 usps:address Found In Verified DB')
                 else :
-                    statReport.report('usps:address Not Found In Verified Addr')
+                    statReport.report('2.2 usps:address Not Found In Verified Addr')
                     checkDistance('UA :', addr, uspsAddr)
                 continue;
             if addr.isPOBox() :
-                statReport.report('google:Postal Office Box, dont request to google')
+                statReport.report('3.9 google:Postal Office Box, dont request to google')
                 continue;
             (ga, msg, al) = verify_by_google.reqGoogle(addr)
-            statReport.report('google:request the address to google map')
+            statReport.report('3.0 google:request the address to google map')
             if ga != None :
                 (gua, msg ) = verify_by_usps.reqUSPS(ga);
                 if gua == None :
+                    print('OF :', addr)
                     print('GA :', ga)
-                    statReport.report('google:address Not Found In USPS')
+                    print('MSG:', msg)
+                    statReport.report('3.1 google:address Not Found In USPS')
+                    checkDistance('UG :', addr, ga)
                     continue;
                 r = npidb.searchAddrInVerified(conn, gua);
                 if len(r) > 0 :
-                    statReport.report('google:address Found In Verified DB:')
+                    statReport.report('3.2 google:address Found In Verified DB:')
                 else :
-                    statReport.report('google:no found in Verified DB' )
+                    statReport.report('3.3 google:no found in Verified DB' )
                     checkDistance('GU :', addr, gua)
                 continue;
             else :
-                print(addr)
-                statReport.report('google:not return a address' )
+                print('OF :', addr)
+                statReport.report('3.4 google:not return a address' )
             #distance = USMailAddress.calcDistance(addr, uspsAddr);
 
             #nvf.write(addr.__str__() + ',' + str(spamreader.line_num) + '\n');

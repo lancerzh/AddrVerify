@@ -9,7 +9,7 @@ import json
 import string
 import time, sys
 import npidb;
-from USMailAddress import Address, AddressLexical, calcDistance
+from USMailAddress import Address, AddressLexical, Distance
 
 serverHead = 'https://maps.googleapis.com/'
 urlreqHead = 'maps/api/geocode/json?address='
@@ -89,7 +89,7 @@ def reqGoogle(addr):
 
     #b'aaa'.encode(encoding='utf_8')
     result = r1.read().decode("utf-8")
-    #print(result)
+    print(result)
     resp = json.loads(result);
     
     #print (resp['status'])
@@ -127,7 +127,8 @@ def reqGoogle(addr):
 
 if __name__ == '__main__':
     statReport = Reporter()
-    r = npidb.fetchBlank('', 1000);
+    conn = npidb.getConnection()
+    r = npidb.fetchBlank(conn, '', 10);
     for row in r:
         va, oa = npidb.createAddrFromRow(row)
 
@@ -145,10 +146,9 @@ if __name__ == '__main__':
         statReport.report(len(alt))
         for ga in alt:
             print (ga);
-            print(calcDistance(oa, ga))
+            print(Distance(oa, ga))
 
     statReport.showStat()
 
-    
     
     

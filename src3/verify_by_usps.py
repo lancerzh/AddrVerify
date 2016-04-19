@@ -5,6 +5,7 @@ Created on Mar 22, 2016
 '''
 
 import urllib.request, urllib.parse, urllib.error;
+import socket
 from USMailAddress import Address, AddressLexical, suffixes, prefixes, qualifiers
 
 from xml.dom.minidom import parseString
@@ -44,8 +45,12 @@ def getText(xmlDoc, tagName):
 def reqUSPS(addr):
     qs = urlString + urllib.parse.quote(buildxml(addr));
 
+    try:
+        r1 = urllib.request.urlopen("http://production.shippingapis.com/"+qs);
+    except socket.error :
+        return (None, ('timeout', 'timeout'))
     #print (qs)
-    r1 = urllib.request.urlopen("http://production.shippingapis.com/"+qs);
+    
     #conn.request("GET", qs)
     #r1 = conn.getresponse()
     #print (r1.status, r1.reason)
@@ -89,10 +94,14 @@ def reqUSPS(addr):
         pass
     else :
         z4 = '----'
+        
+    fn = getText(dom, 'FirmName');
+    if  fn == None:
+        fn = ''
 
 
     #return (Address(a1, a2, c, s, z5 + z4), dom.toprettyxml(), distance);
-    return (Address(a1.upper(), a2.upper(), c.upper(), s.upper(), z5.upper() + z4.upper()), '');
+    return (Address(a1.upper(), a2.upper(), c.upper(), s.upper(), z5.upper() + z4.upper(), firmName=fn), '');
 
 
 

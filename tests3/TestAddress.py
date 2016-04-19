@@ -4,7 +4,7 @@ Created on Apr 8, 2016
 @author: lancer
 '''
 import unittest
-from USMailAddress import Address , Distance
+from USMailAddress import Address , Distance, stripPOBox
 
 
 class Test(unittest.TestCase):
@@ -32,6 +32,7 @@ class Test(unittest.TestCase):
         pass
 
     def testDistance(self):
+        print ('testDistance')
         a1 = Address('a', 'b', 'c', 's', 'z', 'n')
         a2 = Address('a', 'b', 'c', 's', 'z', 'n')
         dist = Distance(a1, a2)
@@ -42,7 +43,27 @@ class Test(unittest.TestCase):
         dist = Distance(a1, a2)
         print (dist.detail())
         self.assertTrue(dist.isMatched())
-
+        
+    def testPOBOXDistance(self):
+        print ('testPOBOXDistance')
+        a1 = Address('PO BOX 12345', '', 'c', 's', 'z', 'n')
+        self.assertTrue(a1.isPOBox())
+        a2 = Address('PO BOX 67890', '', 'c', 's', 'z', 'n')
+        self.assertTrue(a1.isPOBox())
+        dist = Distance(a1, a2)
+        print (dist.detail())
+        
+        a1 = Address('PO BOX 12345', '', 'c', 's', 'z', 'n')
+        self.assertTrue(a1.isPOBox())
+        a2 = Address('PO BOX 92345', '', 'c', 's', 'z', 'n')
+        self.assertTrue(a1.isPOBox())
+        dist = Distance(a1, a2)
+        print (dist.detail())
+        
+    def testStripPOBox(self):
+        self.assertEqual('12345', stripPOBox('PO BOX 12345'))
+        self.assertEqual('67890', stripPOBox('PO BOX 67890'))
+        
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
