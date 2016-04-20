@@ -53,9 +53,10 @@ def getFacility(conn, begin=0, limit=100):
                     and f.BillingAddrID <> 0
                     and f.FacilityName <> ''
                     and f.FacilityID = fpac.FacilityID
-                    and fpac.c <= 2
+
                     limit %s, %s
-            """
+            """  
+            '''and fpac.c <= 2'''
             
             cursor.execute(sql, (begin, limit));
             result = cursor.fetchall()

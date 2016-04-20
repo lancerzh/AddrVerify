@@ -161,16 +161,28 @@ def searchNameByMZSC(conn, addr):
                 select Provider_Organization_Name, 
                 Provider_First_Line_Business_Mailing_Address, 
                 Provider_Second_Line_Business_Mailing_Address,
-                Provider_Other_Organization_Name
+                Provider_Other_Organization_Name,
+                NPI
                 from NPI_ORG
                 where Entity_Type_Code = 2
                 and MAZ5 =  %s 
                 and Provider_Business_Mailing_Address_State_Name = %s
                 and Provider_Business_Mailing_Address_City_Name = %s
+                union 
+                select Provider_Organization_Name, 
+                Provider_First_Line_Business_Practice_Location_Address, 
+                Provider_Second_Line_Business_Practice_Location_Address,
+                Provider_Other_Organization_Name,
+                NPI
+                from NPI_ORG
+                where Entity_Type_Code = 2
+                and PAZ5 =  %s 
+                and Provider_Business_Practice_Location_Address_State_Name = %s
+                and Provider_Business_Practice_Location_Address_City_Name = %s
                 ;
             """
             
-            cursor.execute(sql, (addr.zip5, addr.state, addr.city));
+            cursor.execute(sql, (addr.zip5, addr.state, addr.city, addr.zip5, addr.state, addr.city));
             #print(cursor._last_executed)
 
             result = cursor.fetchall()

@@ -64,6 +64,21 @@ class Test(unittest.TestCase):
         self.assertEqual('12345', stripPOBox('PO BOX 12345'))
         self.assertEqual('67890', stripPOBox('PO BOX 67890'))
         
+    def testAddrToKeyStr(self):
+        print ('testAddrToKeyStr')
+        a1 = Address('PO BOX 12345', 'l2', 'c', 's', 'z', 'n')
+        self.assertEqual('12345 BOX C L2 PO S Z0000', a1.tokeystr())
+        self.assertEqual('0000 12345 BOX C L2 PO S Z0000', a1.tokeystr(usezip4=True))
+        
+        a1 = Address('PO BOX 12345', 'l&2', 'c', 's', 'z', 'n')
+        self.assertEqual('12345 2 BOX C L PO S Z0000', a1.tokeystr())
+        self.assertEqual('0000 12345 2 BOX C L PO S Z0000', a1.tokeystr(usezip4=True))
+    
+    def testAddrDistance(self):
+        print ('testAddrDistance')
+        a1 = Address('488 SAINT LUKES DR','','MONTGOMERY','AL','361170000')
+        a2 = Address('488 SAINT LUKES DR','','MONTGOMERY','AL','361177104');
+        print (Distance(a1, a2).detail())
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()

@@ -5,6 +5,7 @@ Created on Apr 13, 2016
 '''
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+import string
 
 suffixes = {};
 suffixes['ALLEE']= ('ALY','ALLEY','STREET')
@@ -550,13 +551,13 @@ qualifiers['SW']= ('Southwest','SW','GEOGRAPHIC DIRECTIONAL')
 
 
 class Address:
-    def __init__(self, a1, a2, c, s, z, n='US', firmName=''):
+    def __init__(self, a1, a2, c, s, z, row='US', firmName=''):
         self.firmName = firmName.upper();
         self.addr1 = a1.strip().upper();
         self.addr2 = a2.strip().upper();
         self.city = c.strip().upper();
         self.state = s.strip().upper();
-        self.nation = n.strip().upper();
+        self.nation = row.strip().upper();
         z = z.strip().upper();
         if len(z) >=5 :
             self.zip5 = z[0:5];
@@ -581,9 +582,23 @@ class Address:
             return (self.addr1 == other.addr1 and self.addr2 == other.addr2) or (self.addr1 == other.addr2 and self.addr2 == other.addr1) 
         else :
             return False
+    
+    def tokeystr(self, usezip4=False):
+        tranmap = str.maketrans(string.punctuation, ' ' * len(string.punctuation))
+        keylist = [self.state, self.zip5] + self.city.split()
+        if usezip4 :
+            keylist.append(self.zip4)
+        keylist += self.addr1.translate(tranmap).split()
+        keylist += self.addr2.translate(tranmap).split()
+
+        keylist.sort();
+        return ' '.join(keylist)
         
     def __str__(self) :
-        return ','.join((self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4, self.firmName));
+        out = [self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4]
+        if len(self.firmName) > 0 :
+            out.append(self.firmName);
+        return ','.join(out);
     
     def getSortStr(self):
         return ','.join((self.zip5, self.zip4, self.state, self.city, self.addr1, self.addr2)) ;

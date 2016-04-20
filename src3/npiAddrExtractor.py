@@ -55,8 +55,8 @@ def extractAddr(row, index):
         c = row[index[2] - 1];
         s = row[index[3] - 1];
         p = row[index[4] - 1];
-        n = row[index[5] - 1];
-        return verify_by_usps.Address(a1, a2, c, s, p, n);
+        row = row[index[5] - 1];
+        return verify_by_usps.Address(a1, a2, c, s, p, row);
     else :
         return None;
     
@@ -138,10 +138,10 @@ def verify(row, addr, addrtype):
             statReport.report('NotFound')
             r = prepareCsvRow(None, addr, USMailAddress.calcDistance(uspsAddr, addr), row[0], row[1], addrtype, msg[0])
             #print (msg[0] , msg[1])
-            nfm.write(msg[0] + " : " + msg[1] + '\n');
+            nfm.write(msg[0] + " : " + msg[1] + '\row');
             if msg[0] != '-2147219401' :
-                nfm.write(addr.__str__()+"\n")
-                nfm.write(','.join(row)+'\n')
+                nfm.write(addr.__str__()+"\row")
+                nfm.write(','.join(row)+'\row')
             nfm.flush();
 
         else:

@@ -116,14 +116,14 @@ if __name__ == '__main__':
         print (npiidList)
         if len(npiidList) == 0 :
             continue;
-        nameList = getNameByIds(npiidList)
-        for n in nameList :
-            dist = calcDistance(n[0], origName)
+        resultset = getNameByIds(npiidList)
+        for row in resultset :
+            dist = calcDistance(row[0], origName)
             score = dist // 10 * 10;
             if score == 100 :
                 score = 99;
             statReport.report('9.0' + ' distance in ' + str(score))
-            print (n[0], 'DIST :', dist)
+            print (row[0], 'DIST :', dist)
 
             
     conn.close();

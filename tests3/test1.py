@@ -6,6 +6,7 @@ Created on Mar 22, 2016
 import unittest
 import verify_by_usps;
 from xml.dom.minidom import parseString
+import string
 
 
 
@@ -14,6 +15,16 @@ testFile='';
 
 class Test(unittest.TestCase):
 
+    def testPunctuation(self):
+        self.assertEqual(len(string.punctuation), len(' ' * len(string.punctuation)));
+        alist = []
+        self.assertEqual(0, len(alist));
+        alist.append('a')
+        self.assertEqual(1, len(alist));
+        alist.append(['a'])
+        self.assertEqual(2, len(alist));
+        alist = alist + ['a', 'b']
+        self.assertEqual(4, len(alist));
 
     def testAddressZip(self):
         addr1 = verify_by_usps.Address('', '', '', '', '123456789');
@@ -71,6 +82,14 @@ class Test(unittest.TestCase):
         self.assertEqual(None, verify_by_usps.getText(dom, 'Zip4'));
         self.assertEqual(None, verify_by_usps.getText(dom, 'Address1'));
 
+    def testSort(self):
+        l = []
+        l.append(('1', (100, 90, 'PrimaryName')));
+        l.append(('2', (90, 100, 'PrimaryName')));
+        
+        sorted_list = sorted(l, key=lambda x:x[1][1], reverse=True)
+        for item in sorted_list:
+            print(item)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testAv1']

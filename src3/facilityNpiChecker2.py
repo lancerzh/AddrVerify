@@ -1,18 +1,24 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 '''
 Created on Apr 18, 2016
 
 @author: lancer
+
+
 '''
 import facilitydb;
 import npidb;
-from USMailAddress import Address, calcDistance
+from USMailAddress import Address, Distance
 import verify_by_usps
 from fuzzywuzzy import fuzz, process
 import time, sys
 import operator
 
-begin = 0
-totalLine = 100;
+begin = 3320
+totalLine = 500;
+
+not_print = ['9']
 
 class Reporter:
     def __init__(self):
@@ -28,7 +34,8 @@ class Reporter:
         else : 
             self.statCount[stat] = 1;
         self.dotCount += 1;
-        print(stat)
+        if stat[0:1] not in not_print :
+            print(stat)
         sys.stdout.flush()
 
             
@@ -39,6 +46,76 @@ class Reporter:
         print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
         print ('total records =', str(totalLine))
 
+class VoteBox:
+    def __init__(self, name, amap):
+        self.origName = name;
+        self.addrMap = amap;
+        self.nameDistanceMap = {}
+        self.nameAddrsMap = {}
+
+    def add(self, npiName, newAddr, comments=''):
+        highScore = 0;
+        highScoreCompAddr = None;
+        #print (npiName)
+        #print (newAddr)
+        for key in self.addrMap:
+            v = self.addrMap[key]
+            ad = Distance(newAddr, v).ad;
+            #print (key, ': (', v, ') score:', ad)
+            if ad > highScore :
+                highScore = ad;
+                highScoreCompAddr = v;
+        #print (newAddr, highScoreCompAddr, highScore)
+        #self.nameAddrsMap[npiName] = (str(newAddr), 'vs', str(highScoreCompAddr))
+        self.nameAddrsMap[npiName] = (str(newAddr))
+
+        nameDistance = strDistance(npiName, self.origName)
+        if npiName in self.nameDistanceMap.keys():
+            if highScore > self.nameDistanceMap[npiName][1]:
+                self.nameDistanceMap[npiName] = (nameDistance, highScore, comments)
+        else:
+            self.nameDistanceMap[npiName] = (nameDistance, highScore, comments)
+        #print (nameDistance, highScore, comments)
+        #print (self.nameDistanceMap[npiName])
+    def choice(self):
+        lowestScore = 50;
+        print('total found organization name = ', len(self.nameDistanceMap))
+        sortedResult = sorted(self.nameDistanceMap.items(), key=operator.itemgetter(1), reverse=True)
+        sorted_x = []
+        avgOfNameDistance = 0;
+        count = 0;
+        for item in sortedResult:
+            if item[1][0] > lowestScore:
+                avgOfNameDistance += item[1][0];
+                count += 1;
+            else :
+                break;
+        print('name distance > %d, has %d' % (lowestScore, count))
+        if count > 0:
+            avgOfNameDistance = avgOfNameDistance // count;
+            print ('avgOfNameDistance : %02d' % avgOfNameDistance)
+            for item in sortedResult:
+                if item[1][0] >= avgOfNameDistance:
+                    sorted_x.append(item);
+            sorted_x = sorted(sorted_x, key=lambda x:x[1][1], reverse=True)
+        else :
+            print ('no suitable item in result:')
+            self.show(sortedResult);
+        return sorted_x
+
+    def show(self, nameList):
+        for index, x in enumerate(nameList):
+            name = x[0]
+            score = x[1]
+            if index > 10 : 
+                break
+            print ('name:(',name, '), addr: (', self.nameAddrsMap[name], '), score: ', score)
+            if index == 0:
+                score = score[0] // 10 * 10;
+                
+                if score == 100 :
+                    score = 99;
+                statReport.report('9.0 : score ' + str(score));
 
 
 def packInfo(record):
@@ -82,74 +159,46 @@ if __name__ == '__main__':
         print()
         print (itemCount)
         #print (record)
-        (origName, npi, addrList) = packInfo(record);
-        print ('ONPI :', npi)
+        (origName, origNpi, addrList) = packInfo(record);
+        print ('ONPI :', origNpi)
         print ('ON :', origName)
         addrmap = {};
         for addr in addrList :
             print ('OF :', addr)
-            rd = addr
-            
-            (rd, msg) = verify_by_usps.reqUSPS(rd)
+            addrmap[addr.tokeystr()] = addr
+            (rd, msg) = verify_by_usps.reqUSPS(addr)
             if rd == None :
-                statReport.report('0.0 usps return none ');
-                continue;
-            print ('UA :', rd)   
-            addrmap[rd.zip5+rd.state+rd.city] = rd
+                statReport.report('0.0 usps return none');
+            else :
+                print ('UA :', rd)   
+                addrmap[rd.tokeystr()] = rd
             
         print('addrmap length = ', len(addrmap))
-        if len(addrmap) == 0:
-            statReport.report('0.0 have not rewrite address, jump ');
-            continue;
-        nameDistance = {}
-        nameAddrs = {}
+        
+        vbox = VoteBox(origName, addrmap)
+
+        searchKeySet = set();
         for key in addrmap.keys():
             addr = addrmap[key]
-            nameList = npidb.searchNameByMZSC(conn, addr)
-            
-            for n in nameList :
-                #Provider_Organization_Name
-                npiName = n[0]
-                #print (n)
-                d = strDistance(npiName, origName)
-                newAddr = Address(n[1], n[2], addr.city, addr.state, addr.zip5)
-                addrDistance = calcDistance(newAddr, addr)
-                if npiName in nameDistance.keys() :
-                    oldv = nameDistance[npiName]
-                    if d > oldv :
-                        nameDistance[npiName] = d 
-                        nameAddrs[npiName] = (str(newAddr), addrDistance[0], 'p')
-                else :
-                    nameDistance[npiName] = d 
-                    nameAddrs[npiName] = (str(newAddr), addrDistance[0], 'p')
-                    
-                # Provider_Other_Organization_Name
-                npiName = n[3]
-                if npiName != '':
-                    d = strDistance(npiName, origName)
-                    newAddr = Address(n[1], n[2], addr.city, addr.state, addr.zip5)
-                    addrDistance = calcDistance(newAddr, addr)
-                    if npiName in nameDistance.keys() :
-                        oldv = nameDistance[npiName]
-                        if d > oldv :
-                            nameDistance[npiName] = d 
-                            nameAddrs[npiName] = (str(newAddr), addrDistance[0], 'othername')
-                    else :
-                        nameDistance[npiName] = d 
-                        nameAddrs[npiName] = (str(newAddr), addrDistance[0], 'othername')
-        sorted_x = sorted(nameDistance.items(), key=operator.itemgetter(1), reverse=True)
-        print('total organization = ', len(sorted_x))
-        for index, x in enumerate(sorted_x):
-            if index > 10 : 
-                break
-            print (x, nameAddrs[x[0]])
-            if index == 0:
-                score = x[1] // 10 * 10;
+            searchKey = addr.zip5+addr.state+addr.city
+            if searchKey not in searchKeySet:
+                searchKeySet.add(searchKey)
+                resultset = npidb.searchNameByMZSC(conn, addr)
+                print(searchKey, ': result set have ', len(resultset), 'records')
+            else :
+                print ('this search is done!', searchKey)
+                continue;
+            for row in resultset :
+                #Provider_Organization_Name row[0]
+                #print (row)
+                vbox.add(row[0], Address(row[1], row[2], addr.city, addr.state, addr.zip5), ('PrimaryName', row[4]))
                 
-                if score == 100 :
-                    score = 99;
-                statReport.report('9.0 : score ' + str(score));
-
+                # Provider_Other_Organization_Name row[3]
+                if row[3] != '':
+                    vbox.add(row[3], Address(row[1], row[2], addr.city, addr.state, addr.zip5), ('OtherName', row[4]))
+        result = vbox.choice();
+        vbox.show(result);
+        
     conn.close();
     statReport.showStat()
     pass
