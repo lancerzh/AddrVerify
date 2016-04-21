@@ -722,9 +722,11 @@ class Distance:
         a1line = a1.addr1 + ' ' + a1.addr2;
         a2line = a2.addr1 + ' ' + a2.addr2
         if (a1.isPOBox() and a2.isPOBox()):
-            a1line = stripPOBox(a1line)
-            a2line = stripPOBox(a2line)
+            a1line = stripPOBox(a1line.replace('BOX', '').replace('PO', ''))
+            a2line = stripPOBox(a2line.replace('BOX', '').replace('PO', ''))
             self.ad = fuzz.ratio(a1line, a2line);
+        elif (a1.isPOBox() or a2.isPOBox()):
+            self.ad = 0
         else :
             self.ad = fuzz.token_set_ratio(a1line, a2line);
             
@@ -758,33 +760,3 @@ def stripPOBox(line):
     a1line = line.replace('BOX', '').replace('PO', '')
     a1line = ' '.join(a1line.split())
     return a1line;
-'''
-def calcDistance(a1, a2):
-    if a1 == None or a2 == None :
-        return [0, 0, 0, 0, 0, 0, 0]
-    
-    a1d = fuzz.ratio(a1.addr1, a2.addr1);
-    
-    a2d = fuzz.ratio(a1.addr2, a2.addr2);
-    
-    a1line = a1.addr1 + ' ' + a1.addr2;
-    a2line = a2.addr1 + ' ' + a2.addr2
-    if (a1.isPOBox() and a2.isPOBox()):
-        a1line = stripPOBox(a1line)
-        a2line = stripPOBox(a2line)
-        ad = fuzz.ratio(a1line, a2line);
-        print('POX', ad)
-    else :
-        ad = fuzz.token_set_ratio(a1line, a2line);
-        print('NO POX', ad)
-
-    cd = fuzz.ratio(a1.city.replace(' ', ''), a2.city.replace(' ', ''))
-    
-    sd = fuzz.ratio(a1.state, a2.state)
-
-    z5d = fuzz.ratio(a1.zip5, a2.zip5);
-        
-    z4d = fuzz.ratio(a1.zip4, a2.zip4);
-
-    return [ad, a2d, a1d, cd, sd, z5d, z4d];
-'''

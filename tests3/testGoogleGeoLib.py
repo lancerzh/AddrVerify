@@ -17,6 +17,20 @@ addresses = ['207 SOUTH PRINCESS STREET,,SHEPHERDSTOWN,WV,25443,0000',
 
 class Test(unittest.TestCase):
     
+    def testFirmName2(self):
+        print('testFirmName2');
+        addr = Address('6644 BAYWOOD AVE','','MESA','AZ','85206');
+        print (addr);
+        aa, msg, alt = verify_by_google.reqGoogle(addr);
+        for ga in alt:
+            print (ga);
+            print(Distance(addr, ga).detail())
+            print ('placeid :', ga.placeid)
+            verify_by_google.reqPlaceDetail(ga.placeid);
+            
+            verify_by_google.reqSearch(ga.lat, ga.lng, 'BANNER BAYWOOD MEDICAL');
+        
+    
     def testFirmNameAndCity(self):
         print('testFirmNameAndCity');
         addr = Address('DIAGNOSTIC IMAGING SO NV','','LAS VEGAS','NV','89121');

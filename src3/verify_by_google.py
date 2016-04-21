@@ -89,7 +89,7 @@ def reqGoogle(addr):
 
     #b'aaa'.encode(encoding='utf_8')
     result = r1.read().decode("utf-8")
-    print(result)
+    #print(result)
     resp = json.loads(result);
     
     #print (resp['status'])
@@ -117,6 +117,13 @@ def reqGoogle(addr):
         city = words[-3].strip()
         addr = words[-4].strip()
         newAddr = Address(addr, '', city, s, p5, nation)
+        
+        
+        newAddr.placeid = r['place_id']
+        
+        newAddr.lat = r['geometry']['location']['lat'];
+        newAddr.lng = r['geometry']['location']['lng'];
+        
         allReturnAddr.append(newAddr);
 
     if len(allReturnAddr) > 0:
@@ -124,6 +131,41 @@ def reqGoogle(addr):
     else :
         selected = None;
     return (selected, 'OK', allReturnAddr);
+
+def reqPlaceDetail(pid):
+    reqStr = 'https://maps.googleapis.com/maps/api/place/details/json?placeid=' + pid + '&key=AIzaSyCuKahvpDpHsjec6YWLurhED26GD_gfavg'
+    #print (reqStr)
+    r1 = urllib.request.urlopen(reqStr);
+    #conn.request("GET", qs)
+    #r1 = conn.getresponse()
+    #print (r1.status, r1.reason)
+    if r1.status != 200:
+        return (None, (r1.status, r1.reason), [])
+
+    #b'aaa'.encode(encoding='utf_8')
+    result = r1.read().decode("utf-8")
+    #print(result)
+    resp = json.loads(result);
+    #print(resp)
+    
+def reqSearch(lat, lng, name):
+    cn = '+'.join(name.split())
+    reqStr = 'https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=' + str(lat) +','+ str(lng) 
+    #reqStr += '&radius=1&name=' + cn +'&key=AIzaSyCuKahvpDpHsjec6YWLurhED26GD_gfavg'
+    reqStr += '&types=hospital|dentist|doctor&radius=10&name=' + cn +'&key=AIzaSyCuKahvpDpHsjec6YWLurhED26GD_gfavg'
+
+    #print (reqStr)
+    r1 = urllib.request.urlopen(reqStr);
+    if r1.status != 200:
+        return (None, (r1.status, r1.reason))
+    result = r1.read().decode("utf-8")
+    #print(result)
+    resp = json.loads(result);
+    #print(resp)
+    allReturnName = []
+    for r in resp['results'] :
+        allReturnName.append(r['name'])
+    return (allReturnName, 'OK')
 
 if __name__ == '__main__':
     statReport = Reporter()

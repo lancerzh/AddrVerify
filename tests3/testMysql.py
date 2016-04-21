@@ -47,7 +47,12 @@ class Test(unittest.TestCase):
             va, od = npidb.createAddrFromRow(row)
             print (od)
             '''
-            
+    def testnpidb2(self):
+        l = [('92625', 'CA', 'CORONA DEL MAR')]
+        r = npidb.searchNameByMZSC(npidb.getConnection(), l);
+        self.assertTrue(len(r) > 0);
+        for row in r:
+            print (row)
 
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']

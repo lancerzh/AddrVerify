@@ -46,58 +46,71 @@ class Reporter:
         print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
         print ('total records =', str(totalLine))
 
+lowestScore = 50;
+
 class VoteBox:
-    def __init__(self, name, amap):
+            
+    def __init__(self, name, addrList):
         self.origName = name;
-        self.addrMap = amap;
+        self.origAddrList = addrList;
         self.nameDistanceMap = {}
         self.nameAddrsMap = {}
+        
+    def uniqZSCList(self):
+        aMap = {}
+        for addr in self.origAddrList:
+            key = addr.zip5 + addr.state + addr.city;
+            value = (addr.zip5, addr.state, addr.city);
+            aMap[key] = value;
+        return aMap.values();
 
-    def add(self, npiName, newAddr, comments=''):
-        highScore = 0;
+    def add(self, npiid, npiName, newAddrM, newAddrP, msg):
+        addrHighScoreM = 0;
+        addrHighScoreP = 0;
+        addrHighScore = 0
         highScoreCompAddr = None;
+        highScoreAddrName = 'Mail'
         #print (npiName)
         #print (newAddr)
-        for key in self.addrMap:
-            v = self.addrMap[key]
-            ad = Distance(newAddr, v).ad;
-            #print (key, ': (', v, ') score:', ad)
-            if ad > highScore :
-                highScore = ad;
-                highScoreCompAddr = v;
-        #print (newAddr, highScoreCompAddr, highScore)
-        #self.nameAddrsMap[npiName] = (str(newAddr), 'vs', str(highScoreCompAddr))
-        self.nameAddrsMap[npiName] = (str(newAddr))
+        for origAddr in self.origAddrList:
+            adM = Distance(newAddrM, origAddr).ad;
+            adP = Distance(newAddrP, origAddr).ad;
+            #print (key, ': (', origAddr, ') score:', ad)
+            if adM > addrHighScoreM :
+                addrHighScoreM = adM;
+            if adP > addrHighScoreP :
+                addrHighScoreP = adP;
+        if adM >= adP:
+            highScoreCompAddr = newAddrM
+            addrHighScore = addrHighScoreM
+        else :
+            highScoreCompAddr = newAddrP
+            addrHighScore = addrHighScoreP
+            highScoreAddrName = 'Prct'
 
-        nameDistance = strDistance(npiName, self.origName)
-        if npiName in self.nameDistanceMap.keys():
-            if highScore > self.nameDistanceMap[npiName][1]:
-                self.nameDistanceMap[npiName] = (nameDistance, highScore, comments)
-        else:
-            self.nameDistanceMap[npiName] = (nameDistance, highScore, comments)
-        #print (nameDistance, highScore, comments)
-        #print (self.nameDistanceMap[npiName])
+        knd, detail = strDistance(npiName, self.origName)
+        if knd <= lowestScore:
+            return;
+
+        self.nameDistanceMap[npiid] = (knd, addrHighScore, npiName, highScoreCompAddr, highScoreAddrName, detail, msg)
+        #print (self.nameDistanceMap[npiid])
     def choice(self):
-        lowestScore = 50;
-        print('total found organization name = ', len(self.nameDistanceMap))
-        sortedResult = sorted(self.nameDistanceMap.items(), key=operator.itemgetter(1), reverse=True)
+        sortedResult = sorted(self.nameDistanceMap.items(), key=operator.itemgetter(0), reverse=True)
         sorted_x = []
         avgOfNameDistance = 0;
         count = 0;
         for item in sortedResult:
-            if item[1][0] > lowestScore:
-                avgOfNameDistance += item[1][0];
-                count += 1;
-            else :
-                break;
-        print('name distance > %d, has %d' % (lowestScore, count))
+            avgOfNameDistance += item[1][0];
+            count += 1;
+
+        print('name distance > %d, has %d organization name' % (lowestScore, count))
         if count > 0:
             avgOfNameDistance = avgOfNameDistance // count;
             print ('avgOfNameDistance : %02d' % avgOfNameDistance)
             for item in sortedResult:
                 if item[1][0] >= avgOfNameDistance:
                     sorted_x.append(item);
-            sorted_x = sorted(sorted_x, key=lambda x:x[1][1], reverse=True)
+            sorted_x = sorted(sorted_x, key=lambda x:(x[1][0] + x[1][1]), reverse=True)
         else :
             print ('no suitable item in result:')
             self.show(sortedResult);
@@ -105,11 +118,11 @@ class VoteBox:
 
     def show(self, nameList):
         for index, x in enumerate(nameList):
-            name = x[0]
-            score = x[1]
+            name = x[1][2]
+            score = (x[1][0], x[1][1],x[1][5])
             if index > 10 : 
                 break
-            print ('name:(',name, '), addr: (', self.nameAddrsMap[name], '), score: ', score)
+            print (x[0], '(',name, '), (', x[1][3], '), ', x[1][4][:1],',', score, x[1][6])
             if index == 0:
                 score = score[0] // 10 * 10;
                 
@@ -139,13 +152,14 @@ def packInfo(record):
 def strDistance(name1, name2):
     if name1 == None or name2 == None :
         return 0
-    #print (name1)
-    #print (name2)
-    return fuzz.token_set_ratio(name1, name2);
-
+    
+    allr = (fuzz.partial_ratio(name1, name2), fuzz.UWRatio(name1, name2), fuzz.partial_token_set_ratio(name1, name2), fuzz.partial_token_sort_ratio(name1, name2));
+    return (sum(allr) // len(allr), allr)
+    
 def getNameByIds(npiidList):
     
     return npidb.searchNameByIds(conn, npiidList);
+
 
 if __name__ == '__main__':
     statReport = Reporter();
@@ -154,51 +168,57 @@ if __name__ == '__main__':
     itemCount = 0;
     
     for record in facilityTable :
+        procRecordStartTime = time.time();
         npiidList = set()
         itemCount += 1;
         print()
         print (itemCount)
         #print (record)
+        origAddrList = {}
         (origName, origNpi, addrList) = packInfo(record);
         print ('ONPI :', origNpi)
         print ('ON :', origName)
-        addrmap = {};
-        for addr in addrList :
-            print ('OF :', addr)
-            addrmap[addr.tokeystr()] = addr
-            (rd, msg) = verify_by_usps.reqUSPS(addr)
-            if rd == None :
-                statReport.report('0.0 usps return none');
-            else :
-                print ('UA :', rd)   
-                addrmap[rd.tokeystr()] = rd
-            
-        print('addrmap length = ', len(addrmap))
+        for addr in addrList:
+            origAddrList[addr.tokeystr()] = addr;
+            (rewroteAddress, msg) = verify_by_usps.reqUSPS(addr)
+            if rewroteAddress != None and rewroteAddress != addr:
+                origAddrList[rewroteAddress.tokeystr()] = rewroteAddress;
+        for addr in origAddrList.values():
+            print(addr);
         
-        vbox = VoteBox(origName, addrmap)
+        vbox = VoteBox(origName, origAddrList.values())
 
-        searchKeySet = set();
-        for key in addrmap.keys():
-            addr = addrmap[key]
-            searchKey = addr.zip5+addr.state+addr.city
-            if searchKey not in searchKeySet:
-                searchKeySet.add(searchKey)
-                resultset = npidb.searchNameByMZSC(conn, addr)
-                print(searchKey, ': result set have ', len(resultset), 'records')
-            else :
-                print ('this search is done!', searchKey)
-                continue;
-            for row in resultset :
-                #Provider_Organization_Name row[0]
-                #print (row)
-                vbox.add(row[0], Address(row[1], row[2], addr.city, addr.state, addr.zip5), ('PrimaryName', row[4]))
-                
-                # Provider_Other_Organization_Name row[3]
-                if row[3] != '':
-                    vbox.add(row[3], Address(row[1], row[2], addr.city, addr.state, addr.zip5), ('OtherName', row[4]))
+        dbaccessstart = time.time();
+        '''
+        NPI,
+        Provider_Organization_Name, 
+        Provider_Other_Organization_Name,
+        Provider_First_Line_Business_Mailing_Address, 
+        Provider_Second_Line_Business_Mailing_Address,
+        Provider_Business_Mailing_Address_City_Name,
+        Provider_Business_Mailing_Address_State_Name,
+        Provider_Business_Mailing_Address_Postal_Code,
+        Provider_First_Line_Business_Practice_Location_Address, 
+        Provider_Second_Line_Business_Practice_Location_Address,
+        Provider_Business_Practice_Location_Address_City_Name,
+        Provider_Business_Practice_Location_Address_State_Name,
+        Provider_Business_Practice_Location_Address_Postal_Code
+        '''
+        resultset = npidb.searchNameByMZSC(conn, vbox.uniqZSCList())
+        for row in resultset :
+            mailAddr = Address(row[3], row[4], row[5], row[6], row[7])
+            practAddr = Address(row[8], row[9], row[10], row[11], row[12])
+            lastUdt = row[13]
+            isSoleProprietor = row[14]
+            
+            vbox.add(row[0] + ':P', row[1], mailAddr, practAddr, (lastUdt, isSoleProprietor))
+            if row[2] != '':
+                vbox.add(row[0] + ':O', row[2], mailAddr, practAddr, (lastUdt, isSoleProprietor))
+
+        print ('total cost for this db access : %6.2f sec' % (time.time() - dbaccessstart));
         result = vbox.choice();
         vbox.show(result);
-        
+        print ('total cost for this record : %6.2f sec' % (time.time() - procRecordStartTime));
     conn.close();
     statReport.showStat()
     pass

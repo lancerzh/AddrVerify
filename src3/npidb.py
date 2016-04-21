@@ -152,37 +152,46 @@ def searchNameByIds(conn, ids):
         
     return result;
 
-def searchNameByMZSC(conn, addr):
+def searchNameByMZSC(conn, ZSCList):
     result = []
     try:
         with conn.cursor() as cursor:
             # Read a single record
-            sql = """
-                select Provider_Organization_Name, 
+            sql1 = """select NPI,
+                Provider_Organization_Name, 
+                Provider_Other_Organization_Name,
                 Provider_First_Line_Business_Mailing_Address, 
                 Provider_Second_Line_Business_Mailing_Address,
-                Provider_Other_Organization_Name,
-                NPI
-                from NPI_ORG
-                where Entity_Type_Code = 2
-                and MAZ5 =  %s 
-                and Provider_Business_Mailing_Address_State_Name = %s
-                and Provider_Business_Mailing_Address_City_Name = %s
-                union 
-                select Provider_Organization_Name, 
+                Provider_Business_Mailing_Address_City_Name,
+                Provider_Business_Mailing_Address_State_Name,
+                Provider_Business_Mailing_Address_Postal_Code,
                 Provider_First_Line_Business_Practice_Location_Address, 
                 Provider_Second_Line_Business_Practice_Location_Address,
-                Provider_Other_Organization_Name,
-                NPI
+                Provider_Business_Practice_Location_Address_City_Name,
+                Provider_Business_Practice_Location_Address_State_Name,
+                Provider_Business_Practice_Location_Address_Postal_Code,
+                Last_Update_Date,
+                Is_Sole_Proprietor
                 from NPI_ORG
                 where Entity_Type_Code = 2
-                and PAZ5 =  %s 
-                and Provider_Business_Practice_Location_Address_State_Name = %s
-                and Provider_Business_Practice_Location_Address_City_Name = %s
-                ;
-            """
-            
-            cursor.execute(sql, (addr.zip5, addr.state, addr.city, addr.zip5, addr.state, addr.city));
+                and ( """
+
+            sql2Temp = """
+                ( MAZ5 = '%s' 
+                and Provider_Business_Mailing_Address_State_Name = '%s'
+                and Provider_Business_Mailing_Address_City_Name = '%s' ) 
+                or 
+                ( PAZ5 = '%s'
+                and Provider_Business_Practice_Location_Address_State_Name = '%s'
+                and Provider_Business_Practice_Location_Address_City_Name = '%s' )
+                """
+                
+            sql3 = """);"""
+            sql2List = []
+            for ezsc in ZSCList:
+                sql2List.append( sql2Temp % (ezsc[0], ezsc[1], ezsc[2], ezsc[0], ezsc[1], ezsc[2]))
+            sqlStr = sql1 + " or ".join(sql2List) + sql3;
+            cursor.execute(sqlStr, ());
             #print(cursor._last_executed)
 
             result = cursor.fetchall()
