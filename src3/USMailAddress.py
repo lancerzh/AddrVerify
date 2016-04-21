@@ -612,7 +612,7 @@ class Address:
     def isForeign(self):
         if self.nation == 'USA' :
             return False
-        if len(self.state) > 0 : 
+        if len(self.state) == 2 : 
             return False
         else :
             return True;

@@ -15,8 +15,8 @@ from fuzzywuzzy import fuzz, process
 import time, sys
 import operator
 
-begin = 3320
-totalLine = 500;
+begin = 0
+totalLine = 10;
 
 not_print = ['9']
 
@@ -46,7 +46,7 @@ class Reporter:
         print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
         print ('total records =', str(totalLine))
 
-lowestScore = 50;
+lowestScore = 60;
 
 class VoteBox:
             
@@ -69,24 +69,29 @@ class VoteBox:
         addrHighScoreP = 0;
         addrHighScore = 0
         highScoreCompAddr = None;
-        highScoreAddrName = 'Mail'
+        
         #print (npiName)
         #print (newAddr)
         for origAddr in self.origAddrList:
             adM = Distance(newAddrM, origAddr).ad;
-            adP = Distance(newAddrP, origAddr).ad;
-            #print (key, ': (', origAddr, ') score:', ad)
             if adM > addrHighScoreM :
                 addrHighScoreM = adM;
-            if adP > addrHighScoreP :
-                addrHighScoreP = adP;
-        if adM >= adP:
-            highScoreCompAddr = newAddrM
-            addrHighScore = addrHighScoreM
-        else :
-            highScoreCompAddr = newAddrP
-            addrHighScore = addrHighScoreP
-            highScoreAddrName = 'Prct'
+            if newAddrM == newAddrP :
+                highScoreCompAddr = newAddrM
+                addrHighScore = addrHighScoreM
+                highScoreAddrName = 'Both'
+            else :
+                adP = Distance(newAddrP, origAddr).ad;
+                if adP > addrHighScoreP :
+                    addrHighScoreP = adP;
+                if adM >= adP:
+                    highScoreCompAddr = newAddrM
+                    addrHighScore = addrHighScoreM
+                    highScoreAddrName = 'Mail'
+                else :
+                    highScoreCompAddr = newAddrP
+                    addrHighScore = addrHighScoreP
+                    highScoreAddrName = 'Prct'
 
         knd, detail = strDistance(npiName, self.origName)
         if knd <= lowestScore:
@@ -112,24 +117,28 @@ class VoteBox:
                     sorted_x.append(item);
             sorted_x = sorted(sorted_x, key=lambda x:(x[1][0] + x[1][1]), reverse=True)
         else :
-            print ('no suitable item in result:')
-            self.show(sortedResult);
+            statReport.report('0.0 : no suitable record be found');
         return sorted_x
 
     def show(self, nameList):
-        for index, x in enumerate(nameList):
+        maxNameScore = 0;
+        maxAddrScore = 0;
+        for index, x in enumerate(nameList):  
             name = x[1][2]
             score = (x[1][0], x[1][1],x[1][5])
-            if index > 10 : 
-                break
             print (x[0], '(',name, '), (', x[1][3], '), ', x[1][4][:1],',', score, x[1][6])
             if index == 0:
-                score = score[0] // 10 * 10;
-                
-                if score == 100 :
-                    score = 99;
-                statReport.report('9.0 : score ' + str(score));
+                nameScore = score[0] // 10 * 10;                
+                addrScore = score[1] // 10 * 10; 
+                statReport.report('9.0 : name score %03d' % nameScore);
+                statReport.report('9.1 : addr score %03d' % addrScore);
 
+                maxNameScore = score[0];
+                maxAddrScore = score[1];
+                if maxNameScore > 80 and maxAddrScore > 90:
+                    statReport.report('9.2 : maxNameScore > 80 and maxAddrScore > 90');
+            if score[0] < maxNameScore or score[1] < maxAddrScore or index > 10:
+                break;
 
 def packInfo(record):
     addressKList = []
@@ -181,7 +190,7 @@ if __name__ == '__main__':
         for addr in addrList:
             origAddrList[addr.tokeystr()] = addr;
             (rewroteAddress, msg) = verify_by_usps.reqUSPS(addr)
-            if rewroteAddress != None and rewroteAddress != addr:
+            if rewroteAddress != None and rewroteAddress.isEmpty() == False and rewroteAddress != addr:
                 origAddrList[rewroteAddress.tokeystr()] = rewroteAddress;
         for addr in origAddrList.values():
             print(addr);
