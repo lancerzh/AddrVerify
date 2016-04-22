@@ -551,8 +551,8 @@ qualifiers['SW']= ('Southwest','SW','GEOGRAPHIC DIRECTIONAL')
 
 
 class Address:
-    def __init__(self, a1, a2, c, s, z, row='US', firmName=''):
-        self.firmName = firmName.upper();
+    def __init__(self, a1, a2, c, s, z, row='US', msg=''):
+        self.msg = msg.upper();
         self.addr1 = a1.strip().upper();
         self.addr2 = a2.strip().upper();
         self.city = c.strip().upper();
@@ -596,8 +596,8 @@ class Address:
         
     def __str__(self) :
         out = [self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4]
-        if len(self.firmName) > 0 :
-            out.append(self.firmName);
+        if len(self.msg) > 0 :
+            out.append(self.msg);
         return ','.join(out);
     
     def getSortStr(self):
