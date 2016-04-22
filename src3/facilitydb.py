@@ -36,11 +36,19 @@ def getFacility(conn, begin=0, limit=100):
     try:
         with conn.cursor() as cursor:
             # Read a single record
-            sql = """SELECT f.FacilityID,f.TaxID, f.TaxIDType, `Status`, f.FacilityName, f.BillingAddrID,
-                     f.NationalProviderID , 
-                     ba.Address1, ba.Address2, ba.Address3, 
+            sql = """SELECT f.FacilityID,
+                    f.TaxID, 
+                    f.TaxIDType, 
+                    f.`Status`, 
+                    f.FacilityName, 
+                    f.BillingAddrID,
+                    f.NationalProviderID , 
+                     ba.Address1, 
+                     ba.Address2, 
+                     ba.Address3, 
                      ba.city, ba.states, ba.postalcode, 
-                     ba.county, ba.country
+                     ba.county, ba.country,
+                     fpac.c
                     FROM jms_npi.Facility f
                     left join BillingAddress ba
                     on f.BillingAddrID = ba.BillingAddrID, 
@@ -53,7 +61,7 @@ def getFacility(conn, begin=0, limit=100):
                     and f.BillingAddrID <> 0
                     and f.FacilityName <> ''
                     and f.FacilityID = fpac.FacilityID
-
+                    order by ba.states, ba.city, f.FacilityName
                     limit %s, %s
             """  
             '''and fpac.c <= 2'''
