@@ -79,11 +79,11 @@ if __name__ == '__main__':
         print()
         print (itemCount)
         #print (record)
-        (origName, npi, addrList) = packInfo(record);
+        (origName, npi, zscList) = packInfo(record);
         print ('ONPI :', npi)
         print ('ON :', origName)
         
-        for addr in addrList :
+        for addr in zscList :
             print ('OF :', addr)
             '''
             if name != None and name != '':

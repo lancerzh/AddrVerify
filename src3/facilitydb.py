@@ -63,10 +63,16 @@ def getFacility(conn, begin=0, limit=100):
                     and f.FacilityID = fpac.FacilityID
                     order by ba.states, ba.city, f.FacilityName
                     limit %s, %s
+                    ;
             """  
-            '''and fpac.c <= 2'''
+            '''   
+                and fpac.c <= 2
+                and f.NationalProviderID <> ''
+
+            '''
             
             cursor.execute(sql, (begin, limit));
+            #print(cursor._last_executed)
             result = cursor.fetchall()
 
     except :

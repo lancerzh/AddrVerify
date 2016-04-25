@@ -576,8 +576,8 @@ class Address:
             return False;
         if not isinstance(other, Address) :
             return False
-        if self.nation != other.nation :
-            return False
+        #if self.nation != other.nation :
+        #    return False
         if self.city == other.city and self.state == other.state and self.zip5 == other.zip5 :
             return (self.addr1 == other.addr1 and self.addr2 == other.addr2) or (self.addr1 == other.addr2 and self.addr2 == other.addr1) 
         else :
@@ -597,7 +597,7 @@ class Address:
     def __str__(self) :
         out = [self.addr1, self.addr2, self.city, self.state, self.zip5, self.zip4]
         if len(self.msg) > 0 :
-            out.append(self.msg);
+            out.append(' --' + self.msg);
         return ','.join(out);
     
     def getSortStr(self):

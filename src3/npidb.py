@@ -132,7 +132,7 @@ def searchNameByIds(conn, ids):
         with conn.cursor() as cursor:
             # Read a single record
             sql = """SELECT distinct Provider_Organization_Name, NPI, Entity_Type_Code
-                     FROM jms_npi.NPI_ORG
+                     FROM jms_npi.NPI_ETC2
                     where Provider_Organization_Name <> ''
                     and NPI in ( %s )
                     ;
@@ -172,7 +172,7 @@ def searchNameByMZSC(conn, ZSCList):
                 Provider_Business_Practice_Location_Address_Postal_Code,
                 Last_Update_Date,
                 Is_Sole_Proprietor
-                from NPI_ORG
+                from NPI_ETC2
                 where Entity_Type_Code = 2
                 and ( """
 
@@ -191,6 +191,7 @@ def searchNameByMZSC(conn, ZSCList):
             for ezsc in ZSCList:
                 sql2List.append( sql2Temp % (ezsc[0], ezsc[1], ezsc[2], ezsc[0], ezsc[1], ezsc[2]))
             sqlStr = sql1 + " or ".join(sql2List) + sql3;
+            #print(sqlStr)
             cursor.execute(sqlStr, ());
             #print(cursor._last_executed)
 

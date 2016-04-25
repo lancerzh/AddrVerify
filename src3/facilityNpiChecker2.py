@@ -14,11 +14,50 @@ import verify_by_usps
 from fuzzywuzzy import fuzz, process
 import time, sys
 import operator
+import io, csv
 
-begin = 0
-totalLine = 10;
+begin = 5000
+totalLine = 100;
+isOutputToFile = True;
 
 not_print = ['9']
+lowestScore = 60;
+
+outputcsvfile = '../checked.csv'
+
+class FileReport:
+    def __init__(self):
+        self.csvfile = open(outputcsvfile, 'w', encoding='utf-8')
+        self.spamrwriter = csv.writer(self.csvfile, delimiter=',', quotechar='"')
+        
+    def setCurrInfo(self, facilityId, origName, origNpi, zscList, totalPhysician):
+        self.curr = (facilityId, origName, origNpi, zscList, totalPhysician);
+    
+    def report(self, votebox, rhampion):
+        row = [];
+        row.append(self.curr[0])
+        row.append(self.curr[1])
+        row.append(self.curr[2])
+        countOfAddr = len(self.curr[3])
+        for i in range(countOfAddr):
+            row.append(self.curr[3][i])
+        for i in range(3 - countOfAddr):
+            row.append('')
+        row.append(self.curr[4])
+        #((x[0], name, x[1][4][:4], x[1][3], score[0], score[1], x[1][6]))
+        row.append(rhampion[0])
+        row.append(rhampion[1])
+        row.append(rhampion[2])
+        row.append(rhampion[3])
+        row.append(rhampion[4])
+        row.append(rhampion[5])
+        row.append(rhampion[6])
+        row.append(rhampion[7])
+
+        self.spamrwriter.writerow(row);
+        
+    def close(self):
+        self.csvfile.close();
 
 class Reporter:
     def __init__(self):
@@ -43,16 +82,17 @@ class Reporter:
         print();
         for item in sorted(self.statCount) :
             print ('total of', item, ': ', self.statCount[item]);
-        print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
-        print ('total records =', str(totalLine))
 
-lowestScore = 60;
+        #print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
+        #print ('total records =', str(totalLine))
+
+
 
 class VoteBox:
             
-    def __init__(self, name, addrList):
+    def __init__(self, name, zscList):
         self.origName = name;
-        self.origAddrList = addrList;
+        self.origAddrList = zscList;
         self.nameDistanceMap = {}
         self.nameAddrsMap = {}
         
@@ -116,6 +156,8 @@ class VoteBox:
                 if item[1][0] >= avgOfNameDistance:
                     sorted_x.append(item);
             sorted_x = sorted(sorted_x, key=lambda x:(x[1][0] + x[1][1]), reverse=True)
+            #sorted_x = sorted(sorted_x, key=lambda x:(x[1][0]), reverse=True)
+
         else :
             statReport.report('0.0 : no suitable record be found');
         return sorted_x
@@ -125,8 +167,9 @@ class VoteBox:
         maxAddrScore = 0;
         for index, x in enumerate(nameList):  
             name = x[1][2]
-            score = (x[1][0], x[1][1],x[1][5])
-            print (x[0], '(',name, '), (', x[1][3], '), ', x[1][4][:1],',', score, x[1][6])
+            #score = (x[1][0], x[1][1],x[1][5])
+            score = (x[1][0], x[1][1]) # no detail
+            print (x[0], '(',name,')', x[1][4][:4]+':(',x[1][3],')', score, x[1][6])
             if index == 0:
                 nameScore = score[0] // 10 * 10;                
                 addrScore = score[1] // 10 * 10; 
@@ -137,24 +180,32 @@ class VoteBox:
                 maxAddrScore = score[1];
                 if maxNameScore > 80 and maxAddrScore > 90:
                     statReport.report('9.2 : maxNameScore > 80 and maxAddrScore > 90');
-            if score[0] < maxNameScore or score[1] < maxAddrScore or index > 10:
-                break;
+                if isOutputToFile:
+                    w = x[0].split(',')
+                    #print (w[0], w[1].strip(' :'), name, x[1][4], x[1][3], score[0], score[1], x[1][6], x[1][6][0])
+                    fileReport.report(self, ((w[0], w[1].strip(' :'), name, x[1][4], x[1][3], score[0], score[1], x[1][6][0])));
 
+            if score[0] < maxNameScore -5 or score[1] < maxAddrScore - 5 or index > 10:
+                break;
+        if isOutputToFile and len(nameList) == 0:
+            fileReport.report(self, ('','','','','','','',''));
+    
 def packInfo(record):
     addressKList = []
     name = record[4]
     npi = record[6] 
     facilityId = record[0];
+    totalPhysicians = record[15];
     if record[7] != None :
-        addr = Address(record[7], record[8] + ' ' + record[9], record[10], record[11], record[12], record[14])
+        addr = Address(record[7], record[8] + ' ' + record[9], record[10], record[11], record[12], record[14], msg='BillingAddress')
     else :
         addr = None;
     addressKList.append(addr)  
     conn = facilitydb.getConnection()
     addrs = facilitydb.gatFacilityAddress(conn, facilityId);
     for atuple in addrs :
-        addressKList.append(Address(atuple[0],atuple[1] + " " + atuple[2],atuple[3],atuple[4], atuple[5]))  
-    return (name, npi, addressKList);
+        addressKList.append(Address(atuple[0],atuple[1] + " " + atuple[2],atuple[3],atuple[4], atuple[5], msg='FacilityAddress'))  
+    return (facilityId, name, npi, addressKList, totalPhysicians);
 
 
 
@@ -175,25 +226,40 @@ if __name__ == '__main__':
     conn = facilitydb.getConnection()
     facilityTable = facilitydb.getFacility(conn, begin, totalLine)
     itemCount = 0;
+    if isOutputToFile : 
+        fileReport = FileReport();
     
     for record in facilityTable :
         procRecordStartTime = time.time();
         npiidList = set()
         itemCount += 1;
         print()
-        print (itemCount)
-        #print (record)
         origAddrList = {}
-        (origName, origNpi, addrList) = packInfo(record);
+        (facilityId, origName, origNpi, zscList, totalPhysician) = packInfo(record);
+        if isOutputToFile :
+            fileReport.setCurrInfo(facilityId, origName, origNpi, zscList, totalPhysician);
+        print (itemCount, ':', facilityId)
         print ('ONPI :', origNpi)
         print ('ON :', origName)
-        for addr in addrList:
-            origAddrList[addr.tokeystr()] = addr;
+        print('totalPhysician :', totalPhysician)
+        for addr in zscList:
+            #print(addr);
             (rewroteAddress, msg) = verify_by_usps.reqUSPS(addr)
-            if rewroteAddress != None and rewroteAddress.isEmpty() == False and rewroteAddress != addr:
+            if rewroteAddress == None : # USPS don't understand this address
+                addr.msg += " (WARNING:This address can't checkout from USPS)"
+                origAddrList[addr.tokeystr()] = addr;
+            elif  rewroteAddress.isEmpty() : # at least, city/state is right
+                origAddrList[addr.tokeystr()] = addr;
+            elif rewroteAddress != addr:
+                origAddrList[addr.tokeystr()] = addr;
+                rewroteAddress.msg = addr.msg+'/USPS';
                 origAddrList[rewroteAddress.tokeystr()] = rewroteAddress;
+            else : # rewroteAddress == addr
+                origAddrList[addr.tokeystr()] = addr;
         for addr in origAddrList.values():
+            #print('filted by tokeystr (', addr, ')');
             print(addr);
+
         
         vbox = VoteBox(origName, origAddrList.values())
 
@@ -213,21 +279,25 @@ if __name__ == '__main__':
         Provider_Business_Practice_Location_Address_State_Name,
         Provider_Business_Practice_Location_Address_Postal_Code
         '''
-        resultset = npidb.searchNameByMZSC(conn, vbox.uniqZSCList())
+        zscList = vbox.uniqZSCList();
+        print ('check in %d city/state/zip5 group' % len(zscList))
+        resultset = npidb.searchNameByMZSC(conn, zscList)
         for row in resultset :
             mailAddr = Address(row[3], row[4], row[5], row[6], row[7])
             practAddr = Address(row[8], row[9], row[10], row[11], row[12])
             lastUdt = row[13]
             isSoleProprietor = row[14]
             
-            vbox.add(row[0] + ':P', row[1], mailAddr, practAddr, (lastUdt, isSoleProprietor))
+            vbox.add(row[0] + ', PN:', row[1], mailAddr, practAddr, (lastUdt, isSoleProprietor))
             if row[2] != '':
-                vbox.add(row[0] + ':O', row[2], mailAddr, practAddr, (lastUdt, isSoleProprietor))
+                vbox.add(row[0] + ', ON:', row[2], mailAddr, practAddr, (lastUdt, isSoleProprietor))
 
-        print ('total cost for this db access : %6.2f sec' % (time.time() - dbaccessstart));
+        #print ('total cost for this db access : %6.2f sec' % (time.time() - dbaccessstart));
         result = vbox.choice();
         vbox.show(result);
-        print ('total cost for this record : %6.2f sec' % (time.time() - procRecordStartTime));
+        #print ('total cost for this record : %6.2f sec' % (time.time() - procRecordStartTime));
     conn.close();
     statReport.showStat()
+    if isOutputToFile : 
+        fileReport.close();
     pass
