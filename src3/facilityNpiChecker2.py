@@ -83,8 +83,8 @@ class Reporter:
         for item in sorted(self.statCount) :
             print ('total of', item, ': ', self.statCount[item]);
 
-        #print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
-        #print ('total records =', str(totalLine))
+        print ('total cost = {0:.2f} sec'.format((time.time() - self.startTime)))
+        print ('total records =', str(totalLine))
 
 
 
@@ -105,39 +105,28 @@ class VoteBox:
         return aMap.values();
 
     def add(self, npiid, npiName, newAddrM, newAddrP, msg):
-        addrHighScoreM = 0;
-        addrHighScoreP = 0;
-        addrHighScore = 0
-        highScoreCompAddr = None;
+        highScoreAndAddr = (0, None, '-')
         
         #print (npiName)
         #print (newAddr)
         for origAddr in self.origAddrList:
             adM = Distance(newAddrM, origAddr).ad;
-            if adM > addrHighScoreM :
-                addrHighScoreM = adM;
+            adP = Distance(newAddrP, origAddr).ad;
+
             if newAddrM == newAddrP :
-                highScoreCompAddr = newAddrM
-                addrHighScore = addrHighScoreM
-                highScoreAddrName = 'Both'
+                if adM > highScoreAndAddr[0]:
+                    highScoreAndAddr = (adM, newAddrM, 'Both')
             else :
-                adP = Distance(newAddrP, origAddr).ad;
-                if adP > addrHighScoreP :
-                    addrHighScoreP = adP;
-                if adM >= adP:
-                    highScoreCompAddr = newAddrM
-                    addrHighScore = addrHighScoreM
-                    highScoreAddrName = 'Mail'
-                else :
-                    highScoreCompAddr = newAddrP
-                    addrHighScore = addrHighScoreP
-                    highScoreAddrName = 'Prct'
+                if adM > highScoreAndAddr[0]:
+                    highScoreAndAddr = (adM, newAddrM, 'Mail')
+                if adP > highScoreAndAddr[0]:
+                    highScoreAndAddr = (adP, newAddrP, 'Prct')
 
         knd, detail = strDistance(npiName, self.origName)
         if knd <= lowestScore:
             return;
 
-        self.nameDistanceMap[npiid] = (knd, addrHighScore, npiName, highScoreCompAddr, highScoreAddrName, detail, msg)
+        self.nameDistanceMap[npiid] = (knd, highScoreAndAddr[0], npiName, highScoreAndAddr[1], highScoreAndAddr[2], detail, msg)
         #print (self.nameDistanceMap[npiid])
     def choice(self):
         sortedResult = sorted(self.nameDistanceMap.items(), key=operator.itemgetter(0), reverse=True)
@@ -153,7 +142,7 @@ class VoteBox:
             avgOfNameDistance = avgOfNameDistance // count;
             print ('avgOfNameDistance : %02d' % avgOfNameDistance)
             for item in sortedResult:
-                if item[1][0] >= avgOfNameDistance:
+                if item[1][0] >= 0:  #avgOfNameDistance:
                     sorted_x.append(item);
             sorted_x = sorted(sorted_x, key=lambda x:(x[1][0] + x[1][1]), reverse=True)
             #sorted_x = sorted(sorted_x, key=lambda x:(x[1][0]), reverse=True)
@@ -292,10 +281,10 @@ if __name__ == '__main__':
             if row[2] != '':
                 vbox.add(row[0] + ', ON:', row[2], mailAddr, practAddr, (lastUdt, isSoleProprietor))
 
-        #print ('total cost for this db access : %6.2f sec' % (time.time() - dbaccessstart));
+        print ('total cost for this db access : %6.2f sec' % (time.time() - dbaccessstart));
         result = vbox.choice();
         vbox.show(result);
-        #print ('total cost for this record : %6.2f sec' % (time.time() - procRecordStartTime));
+        print ('total cost for this record : %6.2f sec' % (time.time() - procRecordStartTime));
     conn.close();
     statReport.showStat()
     if isOutputToFile : 
