@@ -3,7 +3,7 @@ Created on Apr 18, 2016
 
 @author: lancer
 '''
-import facilitydb;
+
 import npidb;
 from USMailAddress import Address 
 import verify_by_usps
@@ -50,8 +50,8 @@ def packInfo(record):
     else :
         addr = None;
     addressKList.append(addr)  
-    conn = facilitydb.getConnection()
-    addrs = facilitydb.gatFacilityAddress(conn, facilityId);
+    conn = npidb.getConnection()
+    addrs = npidb.gatFacilityAddress(conn, facilityId);
     for atuple in addrs :
         addressKList.append(Address(atuple[0],atuple[1] + " " + atuple[2],atuple[3],atuple[4], atuple[5]))  
     return (name, npi, addressKList);
@@ -69,8 +69,8 @@ def getNameByIds(npiidList):
 
 if __name__ == '__main__':
     statReport = Reporter();
-    conn = facilitydb.getConnection()
-    facilityTable = facilitydb.getFacility(conn, begin, totalLine)
+    conn = npidb.getConnection()
+    facilityTable = npidb.getFacility(conn, begin, totalLine)
     itemCount = 0;
     
     for record in facilityTable :
